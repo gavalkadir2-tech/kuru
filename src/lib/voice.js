@@ -81,6 +81,14 @@ export function describe(a) {
       return pr ? { text: `🥚 ${pairText(pr)} — ${a.eggNo === 2 ? '2.' : '1.'} yumurta, ${d}` } : { text: '🥚 Yumurtlama', error: 'Çift bulunamadı' }
     case 'hatch':
       return pr ? { text: `🐣 ${pairText(pr)} — ${a.count || 1} yavru çıktı, ${d}` } : { text: '🐣 Çıkış', error: 'Çift bulunamadı' }
+    case 'pair': {
+      const m = get('pigeons', a.maleId)
+      const f = get('pigeons', a.femaleId)
+      if (!m || !f) return { text: '💞 Yeni çift', error: 'Kuş bulunamadı' }
+      if (m.sex !== 'E' || f.sex !== 'D') return { text: `💞 ${m.ring} × ${f.ring}`, error: 'Erkek ve dişi ters ya da cinsiyet belirsiz' }
+      if (list('pairs').some((pr) => pr.active !== false && pr.maleId === m.id && pr.femaleId === f.id)) return { text: `💞 ${m.ring} × ${f.ring}`, error: 'Bu çift zaten var' }
+      return { text: `💞 Yeni çift: ${pigeonLabel(m)} × ${pigeonLabel(f)}${a.pairType ? ` (${a.pairType})` : ''}${a.nest ? `, yuva ${a.nest}` : ''}` }
+    }
     case 'foster': {
       const fp = a.fosterPairId && get('pairs', a.fosterPairId)
       if (!pr || !fp) return { text: '🔄 Bakıcıya aktarma', error: 'Çift veya bakıcı bulunamadı' }
@@ -128,6 +136,18 @@ export function apply(a) {
       if (open) return save('clutches', { ...open, egg2Date: date })
       return save('clutches', { pairId: a.pairId, egg1Date: date, egg2Date: '', eggs: a.eggNo === 2 ? 2 : 1, fertile: '', hatchDate: '', hatched: '', notes: 'Sesle eklendi' })
     }
+    case 'pair':
+      return save('pairs', {
+        maleId: a.maleId,
+        femaleId: a.femaleId,
+        startDate: date,
+        season: String(new Date().getFullYear()),
+        type: a.pairType || '',
+        targetColor: a.targetColor || '',
+        nest: a.nest || '',
+        active: true,
+        notes: a.summary || 'Yapay zeka önerisi',
+      })
     case 'foster': {
       const open = latestOpenClutch(a.pairId, (c) => !c.hatchDate)
       return save('clutches', { ...open, fosterPairId: a.fosterPairId, fosterDate: date, fosterEggs: a.eggs || open.eggs || '' })

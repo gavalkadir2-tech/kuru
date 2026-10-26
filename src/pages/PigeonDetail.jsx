@@ -10,6 +10,7 @@ import { HealthForm } from './Health'
 import { useIsHelper } from '../lib/members'
 import { PigeonFlights } from './Flights'
 import Growth from './Growth'
+import { BirdAI } from '../components/AiPanels'
 
 function PedNode({ id, text, gen, maxGen, go, role }) {
   const p = id ? get('pigeons', id) : null
@@ -191,7 +192,7 @@ export default function PigeonDetail({ id, go }) {
       <Tabs
         value={tab}
         onChange={setTab}
-        tabs={{ soy: 'Soy Ağacı', yavru: `Yavrular (${kids.length})`, saglik: `Sağlık (${myHealth.length})`, uretim: `Üretim (${myPairs.length})`, ucus: 'Uçuş', gelisim: 'Gelişim' }}
+        tabs={{ soy: 'Soy Ağacı', yavru: `Yavrular (${kids.length})`, saglik: `Sağlık (${myHealth.length})`, uretim: `Üretim (${myPairs.length})`, ucus: 'Uçuş', gelisim: 'Gelişim', ai: 'AI Değerlendirme' }}
       />
 
       {tab === 'soy' && (
@@ -276,6 +277,7 @@ export default function PigeonDetail({ id, go }) {
 
       {tab === 'ucus' && <PigeonFlights pigeonId={p.id} />}
       {tab === 'gelisim' && <Growth pigeonId={p.id} />}
+      {tab === 'ai' && <BirdAI pigeonId={p.id} />}
 
       {edit && <PigeonForm initial={p} onClose={() => setEdit(false)} />}
       {addHealth && <HealthForm initial={{ scope: 'some', pigeonIds: [p.id] }} onClose={() => setAddHealth(false)} />}

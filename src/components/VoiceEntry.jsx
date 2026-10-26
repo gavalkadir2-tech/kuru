@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { apply, describe, parseSpeech, speechSupported, startListening } from '../lib/voice'
+import { parseSpeech, speechSupported, startListening } from '../lib/voice'
+import ActionCards from './ActionCards'
 import { cloudEnabled } from '../lib/supabase'
 import { ErrorText, Modal } from './ui'
 import { Mic } from 'lucide-react'
@@ -19,7 +20,6 @@ export function VoiceModal({ onClose }) {
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
   const [actions, setActions] = useState(null)
-  const [done, setDone] = useState({})
   const stopRef = useRef(null)
 
   useEffect(() => () => stopRef.current?.(), [])
@@ -43,7 +43,6 @@ export function VoiceModal({ onClose }) {
     if (!text.trim()) return setErr('Önce konuşun veya yazın.')
     setLoading(true)
     setErr('')
-    setDone({})
     try {
       const acts = await parseSpeech(text)
       if (!acts.length) setErr('Kaydedilecek bir bilgi bulunamadı.')
@@ -54,16 +53,6 @@ export function VoiceModal({ onClose }) {
       setLoading(false)
     }
   }
-
-  const applyOne = (i) => {
-    try {
-      apply(actions[i])
-      setDone((d) => ({ ...d, [i]: 'ok' }))
-    } catch (e) {
-      setDone((d) => ({ ...d, [i]: 'Hata: ' + e.message }))
-    }
-  }
-  const applyAll = () => actions.forEach((a, i) => !done[i] && !describe(a).error && applyOne(i))
 
   return (
     <Modal title="🎤 Sesle kayıt" onClose={onClose}>
@@ -92,35 +81,7 @@ export function VoiceModal({ onClose }) {
             </ul>
           </div>
         )}
-        {actions?.length > 0 && (
-          <div className="voice-actions">
-            {actions.map((a, i) => {
-              const d = describe(a)
-              return (
-                <div key={i} className={'card voice-action' + (d.error ? ' bad' : '')}>
-                  <span>{d.text}</span>
-                  {d.error && <span className="small danger-text">{d.error} — kaydedilemez</span>}
-                  {done[i] === 'ok' ? (
-                    <span className="small ok-text">✓ Kaydedildi</span>
-                  ) : done[i] ? (
-                    <span className="small danger-text">{done[i]}</span>
-                  ) : (
-                    !d.error && (
-                      <button className="btn small" onClick={() => applyOne(i)}>
-                        Kaydet
-                      </button>
-                    )
-                  )}
-                </div>
-              )
-            })}
-            {actions.some((a, i) => !done[i] && !describe(a).error) && (
-              <button className="btn primary block" onClick={applyAll}>
-                Tümünü kaydet
-              </button>
-            )}
-          </div>
-        )}
+        {actions?.length > 0 && <ActionCards key={text} actions={actions} />}
       </div>
     </Modal>
   )

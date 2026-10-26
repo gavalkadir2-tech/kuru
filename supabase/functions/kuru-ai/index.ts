@@ -27,8 +27,25 @@ Kurallar:
 - Bulaşıcı hastalık şüphesinde hasta kuşun ayrılmasını ve hijyeni öne çıkar. Acil durumları açıkça "ACİL" diye işaretle.
 - Yalnızca güvercinlik, kuş bakımı ve ilgili konularda yardım et.`
 
+// Programın kaydedebildiği işlemler (sesle kayıt, sohbet ve danışman ortak kullanır)
+const ACTIONS_DOC = [
+  'Kullanılabilecek eylemler:',
+  '{"type":"egg","pairId":"","eggNo":1,"date":""} — yumurtlama (eggNo 1 veya 2)',
+  '{"type":"hatch","pairId":"","count":2,"date":""} — yavru çıkışı',
+  '{"type":"foster","pairId":"","fosterPairId":"","eggs":2,"date":""} — yumurtaların bakıcı çifte aktarılması (pairId gerçek anne-baba, fosterPairId bakıcı)',
+  '{"type":"pair","maleId":"","femaleId":"","pairType":"","nest":"","date":""} — yeni eşleştirme',
+  '{"type":"health","medicine":"","dose":"","diagnosis":"","scope":"all","pigeonIds":[],"date":"","nextDate":"","stockItemId":"","stockQty":0} — ilaç/aşı/tedavi (scope "all" tüm sürü, "some" seçili kuşlar)',
+  '{"type":"feeding","feed":"","amountGram":0,"date":"","rationId":"","stockItemId":""} — yemleme',
+  '{"type":"weight","pigeonId":"","gram":0,"date":""} — tartı',
+  '{"type":"flight","pigeonIds":[],"durationMin":0,"score":0,"date":"","notes":""} — uçuş/oyun (score 1-10)',
+  '{"type":"status","pigeonId":"","status":"satildi|verildi|oldu|kayip","toName":"","toPrice":0,"date":""} — kuş durumu değişikliği',
+  '{"type":"stock_buy","stockItemId":"","qty":0,"cost":0,"date":""} — stok alımı',
+  '{"type":"expense","amount":0,"category":"","note":"","date":""} veya aynı alanlarla {"type":"income"} — diğer gelir/gider',
+  '{"type":"note","text":""} — hatırlatma/not',
+].join('\n')
+
 type Body = {
-  task: 'chat' | 'diagnose' | 'ration' | 'care' | 'parse'
+  task: 'chat' | 'diagnose' | 'ration' | 'care' | 'parse' | 'brief' | 'bird' | 'advisor'
   text?: string
   // deno-lint-ignore no-explicit-any
   context?: Record<string, any>
@@ -121,28 +138,79 @@ function buildMessages(b: Body) {
         `Söylenen not: «${b.text || ''}»`,
         '',
         'YALNIZCA şu biçimde geçerli JSON döndür, başka metin yazma: {"actions":[ ... ]}',
-        'Kullanılabilecek eylemler:',
-        '{"type":"egg","pairId":"","eggNo":1,"date":""} — yumurtlama (eggNo 1 veya 2)',
-        '{"type":"hatch","pairId":"","count":2,"date":""} — yavru çıkışı',
-        '{"type":"foster","pairId":"","fosterPairId":"","eggs":2,"date":""} — bir çiftin yumurtalarının bakıcı çifte aktarılması (pairId gerçek anne-baba, fosterPairId bakıcı)',
-        '{"type":"health","medicine":"","dose":"","diagnosis":"","scope":"all","pigeonIds":[],"date":"","nextDate":"","stockItemId":"","stockQty":0} — ilaç/aşı/tedavi (scope "all" tüm sürü, "some" seçili kuşlar)',
-        '{"type":"feeding","feed":"","amountGram":0,"date":"","rationId":"","stockItemId":""} — yemleme',
-        '{"type":"weight","pigeonId":"","gram":0,"date":""} — tartı',
-        '{"type":"flight","pigeonIds":[],"durationMin":0,"score":0,"date":"","notes":""} — uçuş/oyun (score 1-10)',
-        '{"type":"status","pigeonId":"","status":"satildi|verildi|oldu|kayip","toName":"","toPrice":0,"date":""} — kuş durumu değişikliği',
-        '{"type":"stock_buy","stockItemId":"","qty":0,"cost":0,"date":""} — stok alımı',
-        '{"type":"expense","amount":0,"category":"","note":"","date":""} veya aynı alanlarla {"type":"income"} — diğer gelir/gider',
-        '{"type":"note","text":""} — yukarıdakilere uymayan bilgi',
+        ACTIONS_DOC,
         'Her eyleme kısa Türkçe açıklama için "summary" alanı ekle. Emin olmadığın bilgiyi uydurma.',
       ].join('\n')
+      return [{ role: 'user', content: text }]
+    }
+    case 'brief': {
+      const text = [
+        `Bugün ${b.date}. Aşağıda güvercinliğin güncel verisi var. Yetiştiriciye bugün için kısa bir günlük özet hazırla.`,
+        `Program verisi (JSON):\n${JSON.stringify(b.context || {})}`,
+        '',
+        'Biçim (en fazla 12 satır, sade):',
+        '### Bugün yapılacaklar — tarihi bugün olan ya da geciken işler (çıkış, ışık kontrolü, halkalama, ayırma, ilaç tekrarı), hangi yuvada olduğuyla',
+        '### Dikkat — sağlıkta, stokta, kuluçkada (gecikmiş çıkış, düşük döllülük) veya tartıda gördüğün riskler',
+        '### Öneri — mevsime ve verilere göre 1-3 somut öneri',
+        'Veride olmayan bir şeyi varmış gibi yazma. Yapılacak bir şey yoksa bunu kısaca söyle.',
+      ].join('\n')
+      return [{ role: 'user', content: text }]
+    }
+    case 'bird': {
+      const text = [
+        'Aşağıdaki güvercinin tüm kayıtlarını değerlendir. Soy ağacı, yavruları, üretim, sağlık, tartı ve uçuş verileri dahil.',
+        `Veri (JSON):\n${JSON.stringify(b.context || {})}`,
+        b.goal ? `Yetiştiricinin sorusu / hedefi: ${b.goal}` : '',
+        '',
+        'Biçim:',
+        '### Genel değerlendirme — 2-3 cümle',
+        '### Güçlü yönler ve zayıf yönler — maddeler, verilere dayanarak',
+        '### Damızlık değeri — soy, yavru başarısı ve akrabalık açısından; kimlerle eşleşmesi uygun olur',
+        '### Sağlık ve bakım — riskler ve öneriler (tartı eğilimi, geçmiş tedaviler)',
+        '### Öneriler — somut 3-5 madde',
+        'Verisi olmayan konularda "kayıt yok" de; tahminini tahmin olarak belirt.',
+      ]
+        .filter(Boolean)
+        .join('\n')
+      return [{ role: 'user', content: text }]
+    }
+    case 'advisor': {
+      const text = [
+        'Sen bir güvercin ıslah danışmanısın. Aşağıdaki güvercinlik verisine göre eşleştirme planı hazırla.',
+        `Yetiştiricinin hedefi: ${b.goal || 'sağlıklı, verimli ve iyi uçan yavrular'}`,
+        b.text ? `Ek koşullar: ${b.text}` : '',
+        `Program verisi (JSON). candidatePairs: akrabalığı en düşükten sıralı olası erkek×dişi kombinasyonları (offspringCoi = yavrunun akrabalık yüzdesi):\n${JSON.stringify(b.context || {})}`,
+        '',
+        'Kurallar: her kuş yalnızca bir çiftte olsun; zaten aktif çiftte olan kuşları ayrıca belirt; yavru akrabalığı %6,25 üstü olan eşleşmeleri ancak bilinçli hat yetiştirme için öner ve gerekçe ver; uçuş puanı, ırk, renk ve yaşı dikkate al.',
+        'Biçim:',
+        '### Önerilen çiftler — tablo: Erkek | Dişi | Yavru akrabalığı | Neden',
+        '### Kaçınılması gerekenler',
+        '### Sezon takvimi ve hazırlık — kür/aşı, besleme, eşleştirme sırası',
+        '',
+        'Yanıtın sonuna önerdiğin çiftleri şu blokla ekle (yalnızca listede id değeri olan kuşlar):',
+        '```kuru-actions',
+        '{"actions":[{"type":"pair","maleId":"","femaleId":"","pairType":"","nest":"","summary":"kısa gerekçe"}]}',
+        '```',
+      ]
+        .filter(Boolean)
+        .join('\n')
       return [{ role: 'user', content: text }]
     }
     default: {
       const msgs = (b.messages || []).slice(-12).filter((m) => m.content?.trim())
       if (!msgs.length || msgs[msgs.length - 1].role !== 'user') throw new Error('Soru boş')
+      // Program verisi ilk kullanıcı mesajına eklenir; son mesajda kayıt önerme kuralları hatırlatılır
+      const ctx = b.context
+        ? `[Güvercinliğin güncel verisi — ${b.date}]\n${JSON.stringify(b.context)}\n\n` +
+          'Sorulara bu veriye dayanarak, kuşları halka numarasıyla anarak cevap ver. ' +
+          'Kullanıcı bir şeyin kaydedilmesini isterse veya konuşmadan kaydedilmesi gereken açık bir işlem çıkarsa, yanıtının sonuna şu bloğu ekle (id değerlerini veriden al, emin değilsen ekleme):\n' +
+          '```kuru-actions\n{"actions":[ ... ]}\n```\n' +
+          ACTIONS_DOC
+        : b.summary
+          ? `[Güvercinlik özeti — ${b.date}]\n${b.summary}`
+          : ''
       return msgs.map((m, i) => {
-        const isLast = i === msgs.length - 1
-        const text = isLast && b.summary ? `${m.content}\n\n[Güvercinlik özeti — ${b.date}]\n${b.summary}` : m.content
+        const text = i === msgs.length - 1 && ctx ? `${m.content}\n\n${ctx}` : m.content
         return { role: m.role, content: m.role === 'user' ? userContent(text, m.image) : text }
       })
     }
@@ -162,7 +230,8 @@ async function callClaude(messages: Msg[], task: Body['task']) {
     max_tokens: 8000,
     system: SYSTEM,
     thinking: { type: 'adaptive' },
-    output_config: { effort: task === 'chat' || task === 'parse' ? 'low' : 'medium' },
+    // Hızlı işler düşük, analiz gerektirenler yüksek düşünme düzeyiyle
+    output_config: { effort: task === 'parse' || task === 'brief' ? 'low' : task === 'advisor' || task === 'bird' ? 'high' : 'medium' },
     messages,
     // Güvenlik sınıflandırıcısı reddederse uygun modele otomatik geç
     betas: ['server-side-fallback-2026-07-01'],

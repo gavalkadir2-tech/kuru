@@ -5,6 +5,7 @@ import { Badge, Stat, confirmDel } from '../components/ui'
 import { fmtQty, stockLevels } from '../lib/stock'
 import { useIsHelper } from '../lib/members'
 import { clutchDates, clutchStatus, pairLabel } from './Breeding'
+import { AiBrief } from '../components/AiPanels'
 
 function greeting() {
   const h = new Date().getHours()
@@ -92,6 +93,8 @@ export default function Dashboard({ go }) {
           <Package size={16} /> Stok azaldı: {lowStock.map((l) => `${l.item.name} (${fmtQty(l.qty)} ${l.item.unit})`).join(', ')}
         </button>
       )}
+
+      <AiBrief />
 
       <div className="grid-2">
         <div className="card">

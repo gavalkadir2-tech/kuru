@@ -10,6 +10,7 @@ import { Badge, confirmDel, Empty, ErrorText, Field, Modal, PageTitle, PigeonSel
 import { predict } from '../lib/genetics'
 import { PigeonForm } from './Pigeons'
 import ColorGenetics from './ColorGenetics'
+import { MatingAdvisor } from '../components/AiPanels'
 
 export function pairLabel(pr) {
   if (!pr) return '—'
@@ -658,7 +659,7 @@ export default function Breeding({ go }) {
           )}
         </div>
       </div>
-      <Tabs value={tab} onChange={setTab} tabs={{ kulucka: 'Yumurtlama & Kuluçka', ciftler: `Çiftler (${pairs.length})`, oner: 'Eş Önerisi', renk: 'Renk Tahmini' }} />
+      <Tabs value={tab} onChange={setTab} tabs={{ kulucka: 'Yumurtlama & Kuluçka', ciftler: `Çiftler (${pairs.length})`, oner: 'Eş Önerisi', danisman: 'AI Danışman', renk: 'Renk Tahmini' }} />
 
       {tab === 'kulucka' && (
         <>
@@ -820,6 +821,7 @@ export default function Breeding({ go }) {
 
       {tab === 'oner' && <MateSuggest onPair={(m, f) => setPairEdit({ maleId: m, femaleId: f })} />}
 
+      {tab === 'danisman' && <MatingAdvisor />}
       {tab === 'renk' && <ColorGenetics key={geneticsPair?.id || 'yok'} initialMale={geneticsPair?.maleId} initialFemale={geneticsPair?.femaleId} />}
 
       {fosterOf && <FosterForm clutch={fosterOf} onClose={() => setFosterOf(null)} />}
