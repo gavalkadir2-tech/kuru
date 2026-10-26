@@ -4,6 +4,7 @@ import { ageText, exportCSV, fmtDate, money, num, pigeonLabel, today } from '../
 import { get, list, save, useCollection, useSettings } from '../lib/store'
 import { Badge, Empty, ErrorText, Field, Modal, PhotosEditor, PigeonSelect, SearchBox, Select, persistPhotos } from '../components/ui'
 import { PhotoImg } from '../lib/photos'
+import { ensurePerson, findPerson, syncCreditSale } from '../lib/people'
 
 export const STATUS_TONE = { aktif: 'ok', satildi: 'info', verildi: 'info', oldu: 'danger', kayip: 'warn' }
 
@@ -73,9 +74,21 @@ export function PigeonForm({ initial, onClose, onSaved }) {
       toPrice: num(f.toPrice),
       toDate: ['satildi', 'verildi', 'oldu', 'kayip'].includes(f.status) ? f.toDate || today() : f.toDate,
     })
+    // Kişi listesini ve veresiye cari kaydını güncelle
+    if (rec.origin && rec.origin !== 'uretim' && rec.fromName) ensurePerson(rec.fromName, { phone: rec.fromPhone, city: rec.fromCity, type: 'tedarikci' })
+    if (['satildi', 'verildi'].includes(rec.status) && rec.toName) ensurePerson(rec.toName, { phone: rec.toPhone, city: rec.toCity, type: 'musteri' })
+    syncCreditSale(rec)
     onSaved?.(rec)
     onClose()
   }
+
+  // Kayıtlı kişi seçilince telefon ve şehri doldur
+  const fillPerson = (side) => {
+    const person = findPerson(f[side + 'Name'])
+    if (!person) return
+    setF((s) => ({ ...s, [side + 'Phone']: s[side + 'Phone'] || person.phone || '', [side + 'City']: s[side + 'City'] || person.city || '' }))
+  }
+  const people = useCollection('people')
 
   const transfer = ['satildi', 'verildi'].includes(f.status)
   const lost = ['oldu', 'kayip'].includes(f.status)
@@ -147,6 +160,11 @@ export function PigeonForm({ initial, onClose, onSaved }) {
           <input value={f.motherText} onChange={set('motherText')} disabled={!!f.motherId} />
         </Field>
 
+        <datalist id="people-list">
+          {people.map((p) => (
+            <option key={p.id} value={p.name} />
+          ))}
+        </datalist>
         <h3 className="full section-title">Nereden geldi?</h3>
         <Field label="Köken">
           <Select value={f.origin} onChange={set('origin')} options={ORIGIN} placeholder="—" />
@@ -154,7 +172,7 @@ export function PigeonForm({ initial, onClose, onSaved }) {
         {f.origin && f.origin !== 'uretim' && (
           <>
             <Field label="Kimden">
-              <input value={f.fromName} onChange={set('fromName')} />
+              <input list="people-list" value={f.fromName} onChange={set('fromName')} onBlur={() => fillPerson('from')} />
             </Field>
             <Field label="Telefon">
               <input type="tel" value={f.fromPhone} onChange={set('fromPhone')} />
@@ -180,7 +198,7 @@ export function PigeonForm({ initial, onClose, onSaved }) {
         {transfer && (
           <>
             <Field label={f.status === 'satildi' ? 'Kime satıldı *' : 'Kime verildi *'}>
-              <input value={f.toName} onChange={set('toName')} />
+              <input list="people-list" value={f.toName} onChange={set('toName')} onBlur={() => fillPerson('to')} />
             </Field>
             <Field label="Telefon">
               <input type="tel" value={f.toPhone} onChange={set('toPhone')} />
@@ -195,6 +213,12 @@ export function PigeonForm({ initial, onClose, onSaved }) {
               <Field label="Satış fiyatı (₺)">
                 <input inputMode="decimal" value={f.toPrice} onChange={set('toPrice')} />
               </Field>
+            )}
+            {f.status === 'satildi' && (
+              <label className="check full">
+                <input type="checkbox" checked={!!f.onCredit} onChange={(e) => setF((s) => ({ ...s, onCredit: e.target.checked }))} /> Ödeme alınmadı (veresiye) — müşterinin
+                cari hesabına borç yazılır
+              </label>
             )}
           </>
         )}

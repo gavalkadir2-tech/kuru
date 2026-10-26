@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Auth from './Auth'
-import { list, save, setSyncUser, useAutoSync, useSyncState } from './lib/store'
+import { getSettings, list, save, saveSettings, setSyncUser, useAutoSync, useSyncState } from './lib/store'
+import { migratePeople } from './lib/people'
 import { migrateLegacyPhotos } from './lib/photos'
 import { supabase } from './lib/supabase'
 import Assistant from './pages/Assistant'
@@ -12,6 +13,7 @@ import Labels from './pages/Labels'
 import Ledger from './pages/Ledger'
 import Health from './pages/Health'
 import PigeonDetail from './pages/PigeonDetail'
+import People, { PersonDetail } from './pages/People'
 import Pigeons from './pages/Pigeons'
 import Settings from './pages/Settings'
 import Stock from './pages/Stock'
@@ -26,6 +28,7 @@ const NAV = [
   { id: 'asistan', icon: '🤖', label: 'AI Asistan' },
   { id: 'stok', icon: '📦', label: 'Stok' },
   { id: 'alimsatim', icon: '🤝', label: 'Alım-Satım' },
+  { id: 'kisiler', icon: '👥', label: 'Kişiler' },
   { id: 'defter', icon: '📒', label: 'Gelir-Gider' },
   { id: 'ayarlar', icon: '⚙️', label: 'Ayarlar' },
 ]
@@ -73,6 +76,7 @@ export default function App() {
 
   useEffect(() => {
     migrateLegacyPhotos(list, save)
+    migratePeople(getSettings, saveSettings)
   }, [])
 
   useEffect(() => {
@@ -101,7 +105,7 @@ export default function App() {
     )
 
   const [page, param] = route.split('/')
-  const active = ['kus', 'belge', 'etiket'].includes(page) ? 'kuslar' : page
+  const active = ['kus', 'belge', 'etiket'].includes(page) ? 'kuslar' : page === 'kisi' ? 'kisiler' : page
   let content
   switch (page) {
     case 'kuslar':
@@ -130,6 +134,12 @@ export default function App() {
       break
     case 'stok':
       content = <Stock />
+      break
+    case 'kisiler':
+      content = <People go={go} />
+      break
+    case 'kisi':
+      content = <PersonDetail id={param} go={go} />
       break
     case 'defter':
       content = <Ledger go={go} />
