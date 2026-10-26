@@ -3,6 +3,7 @@ import { GRAINS, PERIODS } from '../lib/constants'
 import { exportCSV, fmtDate, money, num, today } from '../lib/format'
 import { askAI } from '../lib/ai'
 import { optimizeRation } from '../lib/localAi'
+import { STOCK_CATEGORIES, fmtQty, gramsToUnit, removeLinkedMove, stockLevels, syncLinkedMove } from '../lib/stock'
 import { get, remove, save, useCollection } from '../lib/store'
 import { cloudEnabled } from '../lib/supabase'
 import { Empty, ErrorText, Field, Markdown, Modal, Select, Tabs, confirmDel } from '../components/ui'
@@ -206,10 +207,14 @@ function SavedRations() {
 function FeedForm({ initial, onClose }) {
   const rations = useCollection('rations')
   const pigeons = useCollection('pigeons')
+  useCollection('stockMoves')
+  const stockOpts = stockLevels().filter((l) => ['yem', 'vitamin'].includes(l.item.category))
   const [f, setF] = useState({
     date: today(),
     rationId: '',
     feed: '',
+    stockItemId: '',
+    stockQty: '',
     amount: '',
     count: pigeons.filter((p) => p.status === 'aktif').length || '',
     cost: '',
@@ -222,7 +227,11 @@ function FeedForm({ initial, onClose }) {
     e.preventDefault()
     if (!f.rationId && !f.feed.trim()) return setErr('Rasyon seçin veya yem adını yazın.')
     if (!num(f.amount)) return setErr('Verilen miktarı (gram) girin.')
-    save('feedings', { ...f, amount: num(f.amount), count: num(f.count), cost: num(f.cost) })
+    const item = stockOpts.find((l) => l.item.id === f.stockItemId)?.item
+    const used = item ? gramsToUnit(num(f.amount), item.unit) ?? num(f.stockQty) : ''
+    if (item && !used) return setErr(`Stoktan düşülecek miktarı (${item.unit}) girin.`)
+    const rec = save('feedings', { ...f, amount: num(f.amount), count: num(f.count), cost: num(f.cost), stockQty: item ? used : '' })
+    syncLinkedMove({ refId: rec.id, source: 'feeding', itemId: item?.id, qty: used, date: rec.date, note: 'Yemleme' })
     onClose()
   }
   return (
@@ -257,6 +266,25 @@ function FeedForm({ initial, onClose }) {
         <Field label="Kuş sayısı">
           <input inputMode="numeric" value={f.count} onChange={set('count')} />
         </Field>
+        <Field label="Stoktan düş" hint={stockOpts.length ? '' : 'Stok sayfasından yem ekleyince seçilebilir'}>
+          <select value={f.stockItemId} onChange={set('stockItemId')} disabled={!stockOpts.length}>
+            <option value="">— Düşme —</option>
+            {stockOpts.map((l) => (
+              <option key={l.item.id} value={l.item.id}>
+                {l.item.name} ({fmtQty(l.qty)} {l.item.unit})
+              </option>
+            ))}
+          </select>
+        </Field>
+        {(() => {
+          const item = stockOpts.find((l) => l.item.id === f.stockItemId)?.item
+          if (!item || gramsToUnit(1, item.unit) != null) return null
+          return (
+            <Field label={`Düşülecek miktar (${item.unit})`}>
+              <input inputMode="decimal" value={f.stockQty} onChange={set('stockQty')} />
+            </Field>
+          )
+        })()}
         <Field label="Maliyet (₺)">
           <input inputMode="decimal" value={f.cost} onChange={set('cost')} />
         </Field>
@@ -328,7 +356,11 @@ function FeedLog() {
                     <button className="btn tiny" onClick={() => setEdit(r)}>
                       ✎
                     </button>
-                    <button className="btn tiny ghost danger-text" onClick={() => confirmDel(`${fmtDate(r.date)} yemleme`) && remove('feedings', r.id)}>
+                    <button className="btn tiny ghost danger-text" onClick={() => {
+                        if (!confirmDel(`${fmtDate(r.date)} yemleme`)) return
+                        remove('feedings', r.id)
+                        removeLinkedMove(r.id)
+                      }}>
                       ✕
                     </button>
                   </td>

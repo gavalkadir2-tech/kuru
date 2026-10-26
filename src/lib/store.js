@@ -5,7 +5,22 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { supabase } from './supabase'
 import { uploadPendingPhotos } from './photos'
 
-export const COLLECTIONS = ['pigeons', 'pairs', 'clutches', 'health', 'feedings', 'rations', 'notes']
+export const COLLECTIONS = [
+  'pigeons',
+  'pairs',
+  'clutches',
+  'health',
+  'feedings',
+  'rations',
+  'notes',
+  'stock',
+  'stockMoves',
+  'ledger',
+  'people',
+  'accounts',
+  'flights',
+  'weights',
+]
 
 const DATA_KEY = 'kuru:data:v1'
 const DIRTY_KEY = 'kuru:dirty:v1'

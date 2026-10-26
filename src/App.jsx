@@ -13,6 +13,7 @@ import Health from './pages/Health'
 import PigeonDetail from './pages/PigeonDetail'
 import Pigeons from './pages/Pigeons'
 import Settings from './pages/Settings'
+import Stock from './pages/Stock'
 import Trade from './pages/Trade'
 
 const NAV = [
@@ -22,6 +23,7 @@ const NAV = [
   { id: 'saglik', icon: '🩺', label: 'Sağlık' },
   { id: 'yem', icon: '🌾', label: 'Yemleme' },
   { id: 'asistan', icon: '🤖', label: 'AI Asistan' },
+  { id: 'stok', icon: '📦', label: 'Stok' },
   { id: 'alimsatim', icon: '🤝', label: 'Alım-Satım' },
   { id: 'ayarlar', icon: '⚙️', label: 'Ayarlar' },
 ]
@@ -123,6 +125,9 @@ export default function App() {
       break
     case 'asistan':
       content = <Assistant />
+      break
+    case 'stok':
+      content = <Stock />
       break
     case 'alimsatim':
       content = <Trade go={go} />

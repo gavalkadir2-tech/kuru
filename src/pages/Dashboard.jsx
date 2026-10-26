@@ -1,6 +1,7 @@
 import { daysBetween, fmtDate, money, today } from '../lib/format'
 import { get, useCollection, useSettings } from '../lib/store'
 import { Badge, Stat } from '../components/ui'
+import { fmtQty, stockLevels } from '../lib/stock'
 import { clutchDates, clutchStatus, pairLabel } from './Breeding'
 
 export default function Dashboard({ go }) {
@@ -9,6 +10,9 @@ export default function Dashboard({ go }) {
   const pairs = useCollection('pairs')
   const clutches = useCollection('clutches')
   const health = useCollection('health')
+  useCollection('stockMoves')
+  useCollection('stock')
+  const lowStock = stockLevels().filter((l) => l.low)
   const t = today()
   const year = t.slice(0, 4)
 
@@ -66,6 +70,12 @@ export default function Dashboard({ go }) {
           onClick={() => go('saglik')}
         />
       </div>
+
+      {lowStock.length > 0 && (
+        <button className="alert warn link-row" onClick={() => go('stok')}>
+          📦 Stok azaldı: {lowStock.map((l) => `${l.item.name} (${fmtQty(l.qty)} ${l.item.unit})`).join(', ')}
+        </button>
+      )}
 
       <div className="grid-2">
         <div className="card">

@@ -3,6 +3,7 @@ import { CARE_GUIDE, HEALTH_TYPES, MEDICINES, SEX, SYMPTOMS, URGENCY } from '../
 import { ageText, daysBetween, exportCSV, fmtDate, money, num, pigeonLabel, today } from '../lib/format'
 import { askAI } from '../lib/ai'
 import { diagnoseLocal, flockSummary } from '../lib/localAi'
+import { fmtQty, removeLinkedMove, stockLevels, syncLinkedMove } from '../lib/stock'
 import { get, list, remove, save, useCollection } from '../lib/store'
 import { cloudEnabled } from '../lib/supabase'
 import { Badge, Empty, ErrorText, Field, Markdown, Modal, PhotoInput, PigeonSelect, SearchBox, Select, Tabs, confirmDel } from '../components/ui'
@@ -30,6 +31,8 @@ function PigeonMulti({ value, onChange }) {
 }
 
 export function HealthForm({ initial, onClose }) {
+  useCollection('stockMoves')
+  const stockOpts = stockLevels().filter((l) => ['ilac', 'vitamin'].includes(l.item.category))
   const [f, setF] = useState({
     type: 'ilac',
     date: today(),
@@ -57,7 +60,9 @@ export function HealthForm({ initial, onClose }) {
     if (!f.medicine.trim() && !f.diagnosis.trim()) return setErr('İlaç/uygulama veya teşhis alanlarından en az birini doldurun.')
     if (f.scope === 'some' && !f.pigeonIds.length) return setErr('En az bir kuş seçin veya "Tüm sürü" seçeneğini kullanın.')
     if (f.nextDate && f.nextDate < f.date) return setErr('Tekrar tarihi uygulama tarihinden önce olamaz.')
-    save('health', { ...f, cost: num(f.cost), pigeonIds: f.scope === 'all' ? [] : f.pigeonIds })
+    if (f.stockItemId && !num(f.stockQty)) return setErr('Stoktan düşülecek miktarı girin.')
+    const rec = save('health', { ...f, cost: num(f.cost), stockQty: num(f.stockQty), pigeonIds: f.scope === 'all' ? [] : f.pigeonIds })
+    syncLinkedMove({ refId: rec.id, source: 'health', itemId: f.stockItemId, qty: num(f.stockQty), date: rec.date, note: rec.medicine || rec.diagnosis })
     onClose()
   }
   return (
@@ -112,6 +117,21 @@ export function HealthForm({ initial, onClose }) {
         <Field label="Maliyet (₺)">
           <input inputMode="decimal" value={f.cost} onChange={set('cost')} />
         </Field>
+        <Field label="Stoktan düş">
+          <select value={f.stockItemId || ''} onChange={set('stockItemId')} disabled={!stockOpts.length}>
+            <option value="">— Düşme —</option>
+            {stockOpts.map((l) => (
+              <option key={l.item.id} value={l.item.id}>
+                {l.item.name} ({fmtQty(l.qty)} {l.item.unit})
+              </option>
+            ))}
+          </select>
+        </Field>
+        {f.stockItemId && (
+          <Field label={`Kullanılan miktar (${stockOpts.find((l) => l.item.id === f.stockItemId)?.item.unit || ''})`}>
+            <input inputMode="decimal" value={f.stockQty || ''} onChange={set('stockQty')} />
+          </Field>
+        )}
         <Field label="Uygulanan" full>
           <div className="row gap">
             <label className="check">
@@ -228,7 +248,11 @@ function Records() {
                   <button className="btn small" onClick={() => setEdit(h)}>
                     Düzenle
                   </button>
-                  <button className="btn small ghost danger-text" onClick={() => confirmDel(h.medicine || h.diagnosis) && remove('health', h.id)}>
+                  <button className="btn small ghost danger-text" onClick={() => {
+                      if (!confirmDel(h.medicine || h.diagnosis)) return
+                      remove('health', h.id)
+                      removeLinkedMove(h.id)
+                    }}>
                     Sil
                   </button>
                 </div>

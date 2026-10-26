@@ -142,6 +142,13 @@ export function dueEvents(data: Record<string, Rec[]>, today: string) {
   for (const h of data.health || []) {
     if (h.nextDate === today) out.push(`💊 ${h.medicine || h.diagnosis || 'Uygulama'} tekrarı bugün`)
   }
+  const moves = data.stockMoves || []
+  const low = (data.stock || []).filter((s) => {
+    if (s.minQty === '' || s.minQty == null) return false
+    const qty = moves.filter((m) => m.itemId === s.id).reduce((t, m) => t + (+m.qty || 0), 0)
+    return qty <= +s.minQty
+  })
+  if (low.length) out.push(`📦 Stok azaldı: ${low.map((s) => s.name).join(', ')}`)
   return out
 }
 
