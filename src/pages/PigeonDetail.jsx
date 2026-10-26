@@ -3,7 +3,8 @@ import { HEALTH_TYPES, ORIGIN, SEX, STATUS } from '../lib/constants'
 import { ageText, fmtDate, money, pigeonLabel } from '../lib/format'
 import { offspring } from '../lib/pedigree'
 import { get, remove, useCollection, useRecord } from '../lib/store'
-import { Badge, Empty, Tabs, confirmDel } from '../components/ui'
+import { Badge, Empty, Gallery, Tabs, confirmDel } from '../components/ui'
+import { PhotoImg, deletePhoto } from '../lib/photos'
 import { PigeonForm, STATUS_TONE, parentLabel } from './Pigeons'
 import { HealthForm } from './Health'
 
@@ -69,6 +70,7 @@ export default function PigeonDetail({ id, go }) {
   const del = () => {
     if (!confirmDel(pigeonLabel(p))) return
     remove('pigeons', p.id)
+    ;(p.photos || []).forEach((ph) => deletePhoto(ph.id))
     go('kuslar')
   }
 
@@ -92,7 +94,7 @@ export default function PigeonDetail({ id, go }) {
       </div>
 
       <div className="detail-head card">
-        {p.photo ? <img src={p.photo} alt="" className="detail-photo" /> : <div className="avatar big">{p.sex === 'D' ? '♀' : p.sex === 'E' ? '♂' : '🕊️'}</div>}
+        <PhotoImg id={p.photos?.[0]?.id} className="detail-photo" fallback={<div className="avatar big">{p.sex === 'D' ? '♀' : p.sex === 'E' ? '♂' : '🕊️'}</div>} />
         <div>
           <h1>{p.ring}</h1>
           {p.name && <p className="lead">{p.name}</p>}
@@ -160,6 +162,12 @@ export default function PigeonDetail({ id, go }) {
           </div>
         )}
       </div>
+
+      {p.photos?.length > 1 && (
+        <div className="card">
+          <Gallery photos={p.photos} />
+        </div>
+      )}
 
       <Tabs
         value={tab}

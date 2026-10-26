@@ -3,6 +3,7 @@
 // arka planda `kuru_records` tablosuyla senkronize edilir (son yazan kazanır).
 import { useEffect, useSyncExternalStore } from 'react'
 import { supabase } from './supabase'
+import { uploadPendingPhotos } from './photos'
 
 export const COLLECTIONS = ['pigeons', 'pairs', 'clutches', 'health', 'feedings', 'rations', 'notes']
 
@@ -157,7 +158,7 @@ export function importBackup(json) {
 }
 
 // ---------- Bulut senkronu ----------
-const syncState = { status: 'idle', lastSync: readJSON(PULL_KEY, null), error: null, user: null }
+const syncState = { status: 'idle', lastSync: readJSON(PULL_KEY, null), error: null, user: null, ownerId: null }
 const syncListeners = new Set()
 function setSync(patch) {
   Object.assign(syncState, patch)
@@ -175,9 +176,14 @@ export function useSyncState() {
   )
 }
 
-export function setSyncUser(user) {
-  setSync({ user })
+export function setSyncUser(user, ownerId) {
+  setSync({ user, ownerId: user ? ownerId || user.id : null })
   if (user) syncNow()
+}
+
+// Bulutta kayıtların ait olduğu güvercinlik sahibinin kimliği
+export function cloudOwnerId() {
+  return syncState.ownerId
 }
 
 let syncTimer = null
@@ -197,6 +203,7 @@ export async function syncNow() {
   syncing = true
   setSync({ status: 'syncing', error: null })
   try {
+    await uploadPendingPhotos()
     // 1) Yerel değişiklikleri gönder
     const keys = [...dirty]
     if (keys.length) {
@@ -207,7 +214,7 @@ export async function syncNow() {
           if (!rec) return null
           return {
             id,
-            owner_id: syncState.user.id,
+            owner_id: syncState.ownerId,
             collection,
             data: rec,
             updated_at: rec.updated_at,

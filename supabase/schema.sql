@@ -35,3 +35,25 @@ create policy "kuru_insert_own" on public.kuru_records for insert with check (ow
 
 drop policy if exists "kuru_update_own" on public.kuru_records;
 create policy "kuru_update_own" on public.kuru_records for update using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+
+-- ---------- Fotoğraflar (Storage) ----------
+-- Dosya yolu: <güvercinlik sahibinin kullanıcı kimliği>/<fotoğraf kimliği>.jpg
+insert into storage.buckets (id, name, public)
+values ('kuru-photos', 'kuru-photos', false)
+on conflict (id) do nothing;
+
+drop policy if exists "kuru_photos_select" on storage.objects;
+create policy "kuru_photos_select" on storage.objects for select
+  using (bucket_id = 'kuru-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "kuru_photos_insert" on storage.objects;
+create policy "kuru_photos_insert" on storage.objects for insert
+  with check (bucket_id = 'kuru-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "kuru_photos_update" on storage.objects;
+create policy "kuru_photos_update" on storage.objects for update
+  using (bucket_id = 'kuru-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "kuru_photos_delete" on storage.objects;
+create policy "kuru_photos_delete" on storage.objects for delete
+  using (bucket_id = 'kuru-photos' and (storage.foldername(name))[1] = auth.uid()::text);

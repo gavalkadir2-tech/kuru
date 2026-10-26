@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { BREEDS, COLORS, ORIGIN, SEX, STATUS } from '../lib/constants'
 import { ageText, exportCSV, fmtDate, money, num, pigeonLabel, today } from '../lib/format'
 import { get, list, save, useCollection, useSettings } from '../lib/store'
-import { Badge, Empty, ErrorText, Field, Modal, PhotoInput, PigeonSelect, SearchBox, Select } from '../components/ui'
+import { Badge, Empty, ErrorText, Field, Modal, PhotosEditor, PigeonSelect, SearchBox, Select, persistPhotos } from '../components/ui'
+import { PhotoImg } from '../lib/photos'
 
 export const STATUS_TONE = { aktif: 'ok', satildi: 'info', verildi: 'info', oldu: 'danger', kayip: 'warn' }
 
@@ -34,7 +35,7 @@ export function emptyPigeon(extra = {}) {
     lossReason: '',
     traits: '',
     notes: '',
-    photo: '',
+    photos: [],
     ...extra,
   }
 }
@@ -45,8 +46,10 @@ export function PigeonForm({ initial, onClose, onSaved }) {
   const [err, setErr] = useState('')
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v?.target ? v.target.value : v }))
 
-  const submit = (e) => {
+  const [saving, setSaving] = useState(false)
+  const submit = async (e) => {
     e.preventDefault()
+    if (saving) return
     const ring = f.ring.trim().toUpperCase()
     if (!ring) return setErr('Ayak seri numarası (halka no) zorunludur.')
     if (!f.sex) return setErr('Cinsiyet seçiniz.')
@@ -54,8 +57,17 @@ export function PigeonForm({ initial, onClose, onSaved }) {
     if (dup) return setErr(`Bu halka numarası zaten kayıtlı: ${pigeonLabel(dup)}`)
     if (f.fatherId && f.fatherId === f.motherId) return setErr('Anne ve baba aynı kuş olamaz.')
     if (['satildi', 'verildi'].includes(f.status) && !f.toName.trim()) return setErr('Kime satıldığını / verildiğini yazınız.')
+    setSaving(true)
+    let photos
+    try {
+      photos = await persistPhotos(f.photos || [], initial?.photos || [])
+    } catch (ex) {
+      setSaving(false)
+      return setErr('Fotoğraf kaydedilemedi: ' + ex.message)
+    }
     const rec = save('pigeons', {
       ...f,
+      photos,
       ring,
       fromPrice: num(f.fromPrice),
       toPrice: num(f.toPrice),
@@ -78,16 +90,16 @@ export function PigeonForm({ initial, onClose, onSaved }) {
           <button className="btn ghost" onClick={onClose}>
             Vazgeç
           </button>
-          <button className="btn primary" form="pigeon-form">
-            Kaydet
+          <button className="btn primary" form="pigeon-form" disabled={saving}>
+            {saving ? 'Kaydediliyor…' : 'Kaydet'}
           </button>
         </>
       }
     >
       <form id="pigeon-form" onSubmit={submit} className="form-grid">
         <ErrorText>{err}</ErrorText>
-        <div className="full row gap">
-          <PhotoInput value={f.photo} onChange={set('photo')} />
+        <div className="full">
+          <PhotosEditor value={f.photos || []} onChange={set('photos')} />
         </div>
         <Field label="Ayak seri no (halka) *" hint={`Örn: ${settings.ringPrefix}-${new Date().getFullYear()}-123456`}>
           <input value={f.ring} onChange={set('ring')} autoCapitalize="characters" placeholder={`${settings.ringPrefix}-${new Date().getFullYear()}-`} />
@@ -283,7 +295,7 @@ export default function Pigeons({ go }) {
         <div className="card-list">
           {filtered.map((p) => (
             <button key={p.id} className="pigeon-card" onClick={() => go(`kus/${p.id}`)}>
-              {p.photo ? <img src={p.photo} alt="" /> : <div className="avatar">{p.sex === 'D' ? '♀' : p.sex === 'E' ? '♂' : '🕊️'}</div>}
+              <PhotoImg id={p.photos?.[0]?.id} className="thumb" fallback={<div className="avatar">{p.sex === 'D' ? '♀' : p.sex === 'E' ? '♂' : '🕊️'}</div>} />
               <div className="pc-body">
                 <div className="pc-title">
                   <strong>{p.ring}</strong> {p.name && <span>· {p.name}</span>}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Auth from './Auth'
-import { setSyncUser, useAutoSync, useSyncState } from './lib/store'
+import { list, save, setSyncUser, useAutoSync, useSyncState } from './lib/store'
+import { migrateLegacyPhotos } from './lib/photos'
 import { supabase } from './lib/supabase'
 import Assistant from './pages/Assistant'
 import Breeding from './pages/Breeding'
@@ -63,6 +64,10 @@ export default function App() {
   const [skipAuth, setSkipAuth] = useState(() => sessionStorage.getItem('kuru:skipAuth') === '1')
   const [menu, setMenu] = useState(false)
   useAutoSync()
+
+  useEffect(() => {
+    migrateLegacyPhotos(list, save)
+  }, [])
 
   useEffect(() => {
     if (!supabase) return setSession(null)

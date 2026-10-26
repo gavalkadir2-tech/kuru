@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { compressImage, markdown, pigeonLabel } from '../lib/format'
 import { useCollection } from '../lib/store'
+import { PHOTO_LABELS, PhotoImg, deletePhoto, putPhoto } from '../lib/photos'
 
 export function Modal({ title, onClose, children, footer, wide }) {
   useEffect(() => {
@@ -165,4 +166,92 @@ export function ErrorText({ children }) {
 
 export function confirmDel(label) {
   return window.confirm(`"${label}" silinsin mi? Bu işlem geri alınamaz.`)
+}
+
+// Kuş başına çoklu fotoğraf. value: [{ id?, dataUrl?, label }] — yeni eklenenlerde yalnızca dataUrl vardır.
+export function PhotosEditor({ value, onChange }) {
+  const ref = useRef()
+  const [err, setErr] = useState('')
+  const add = async (e) => {
+    const files = [...(e.target.files || [])]
+    e.target.value = ''
+    if (!files.length) return
+    try {
+      setErr('')
+      const added = []
+      for (const f of files.slice(0, 8)) added.push({ dataUrl: await compressImage(f, 1024, 0.78), label: value.length + added.length ? 'Diğer' : 'Genel' })
+      onChange([...value, ...added])
+    } catch (ex) {
+      setErr(ex.message)
+    }
+  }
+  const update = (i, patch) => onChange(value.map((p, j) => (j === i ? { ...p, ...patch } : p)))
+  const removeAt = (i) => onChange(value.filter((_, j) => j !== i))
+  const makeMain = (i) => onChange([value[i], ...value.filter((_, j) => j !== i)])
+  return (
+    <div className="photos-editor">
+      <div className="photo-strip">
+        {value.map((ph, i) => (
+          <div key={ph.id || i} className="photo-tile">
+            {ph.dataUrl ? <img src={ph.dataUrl} alt="" /> : <PhotoImg id={ph.id} fallback={<div className="photo-ph">⏳</div>} />}
+            <select value={ph.label} onChange={(e) => update(i, { label: e.target.value })}>
+              {PHOTO_LABELS.map((l) => (
+                <option key={l}>{l}</option>
+              ))}
+            </select>
+            <div className="row gap-s">
+              {i > 0 && (
+                <button type="button" className="btn tiny ghost" onClick={() => makeMain(i)} title="Ana fotoğraf yap">
+                  ★
+                </button>
+              )}
+              <button type="button" className="btn tiny ghost danger-text" onClick={() => removeAt(i)} title="Kaldır">
+                ✕
+              </button>
+            </div>
+          </div>
+        ))}
+        <button type="button" className="photo-ph add" onClick={() => ref.current.click()}>
+          📷<span>Ekle</span>
+        </button>
+      </div>
+      {err && <span className="error-text">{err}</span>}
+      <input ref={ref} type="file" accept="image/*" multiple hidden onChange={add} />
+    </div>
+  )
+}
+
+// Kaydetmeden önce yeni fotoğrafları depoya yazar, kaldırılanları siler
+export async function persistPhotos(next, prev = []) {
+  const out = []
+  for (const ph of next) {
+    if (ph.id) out.push({ id: ph.id, label: ph.label })
+    else if (ph.dataUrl) out.push({ id: await putPhoto(ph.dataUrl), label: ph.label })
+  }
+  const keep = new Set(out.map((p) => p.id))
+  prev.filter((p) => !keep.has(p.id)).forEach((p) => deletePhoto(p.id))
+  return out
+}
+
+export function Gallery({ photos }) {
+  const [open, setOpen] = useState(null)
+  if (!photos?.length) return null
+  return (
+    <>
+      <div className="photo-strip">
+        {photos.map((ph, i) => (
+          <button key={ph.id} className="photo-tile view" onClick={() => setOpen(i)}>
+            <PhotoImg id={ph.id} fallback={<div className="photo-ph">⏳</div>} />
+            <span className="tiny muted">{ph.label}</span>
+          </button>
+        ))}
+      </div>
+      {open != null && (
+        <div className="lightbox" onClick={() => setOpen(null)}>
+          <PhotoImg id={photos[open].id} />
+          <span>{photos[open].label}</span>
+        </div>
+      )}
+    </>
+  )
 }
