@@ -21,7 +21,7 @@ Samet Kuru için geliştirilmiş güvercin takip programı. Telefonda uygulama g
 
 - **Önyüz:** React 18 + Vite 6, PWA (`vite-plugin-pwa`). Tüm veriler önce cihazda (localStorage) tutulur, böylece internet yokken de çalışır.
 - **Bulut:** Supabase. Tek tablo (`kuru_records`), satır düzeyi güvenlik ile her kullanıcı yalnızca kendi verisini görür. İnternet gelince otomatik senkron (son yazan kazanır).
-- **Yapay zeka:** Supabase Edge Function (`kuru-ai`) üzerinden Claude API. API anahtarı yalnızca sunucuda durur, telefona inmez. Yalnızca giriş yapmış kullanıcılar kullanabilir.
+- **Yapay zeka:** Supabase Edge Function (`kuru-ai`) üzerinden **Google Gemini** (ücretsiz kota) veya **Claude** (ücretli). Hangi anahtar tanımlıysa o kullanılır. API anahtarı yalnızca sunucuda durur, telefona inmez. Yalnızca giriş yapmış kullanıcılar kullanabilir.
 
 Supabase ayarlanmazsa uygulama **yerel modda** çalışır: tüm özellikler (yapay zeka hariç) tek cihazda kullanılabilir.
 
@@ -48,16 +48,23 @@ npm run build      # dist/ klasörüne üretim çıktısı
 
 ### 3. Yapay zeka (Edge Function)
 
-[Anthropic Console](https://console.anthropic.com) üzerinden API anahtarı alın, sonra:
+**Ücretsiz seçenek — Google Gemini:**
+1. https://aistudio.google.com/apikey adresinde Google hesabıyla **Create API key** deyin.
+2. Supabase → **Edge Functions → Secrets** → `GEMINI_API_KEY` adıyla ekleyin.
+3. **Edge Functions → Deploy a new function → Via Editor**, adı `kuru-ai`, içeriği `supabase/functions/kuru-ai/index.ts`.
+
+Ücretsiz kotada dakika/gün başına istek sınırı vardır ve Google ücretsiz kullanımda gönderilen verileri ürünlerini geliştirmek için kullanabilir. Varsayılan model `gemini-flash-latest`'tir; değiştirmek için `GEMINI_MODEL` secret'ı eklenir.
+
+**Ücretli seçenek — Claude:** `GEMINI_API_KEY` yerine `ANTHROPIC_API_KEY` ekleyin ([Anthropic Console](https://console.anthropic.com)). Varsayılan model `claude-opus-5-5`, değiştirmek için `KURU_AI_MODEL`. İki anahtar da varsa Gemini kullanılır.
+
+Komut satırıyla yüklemek isterseniz:
 
 ```bash
 npx supabase login
 npx supabase link --project-ref <proje-ref>
-npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+npx supabase secrets set GEMINI_API_KEY=...
 npx supabase functions deploy kuru-ai
 ```
-
-Varsayılan model `claude-opus-5-5`'tir. Değiştirmek için: `npx supabase secrets set KURU_AI_MODEL=<model-id>`.
 
 ### 4. Yayınlama (internetten erişim)
 
