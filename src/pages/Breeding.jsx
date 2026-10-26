@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { INCUBATION_DAYS, RING_DAY, WEAN_DAY } from '../lib/constants'
-import { addDays, daysBetween, exportCSV, fmtDate, pigeonLabel, today } from '../lib/format'
+import { INCUBATION_DAYS, RING_DAY, STATUS, WEAN_DAY } from '../lib/constants'
+import { addDays, daysBetween, exportCSV, fmtDate, money, pigeonLabel, today } from '../lib/format'
+import { flightStats } from '../lib/performance'
 import { coiLabel, kinship, kinshipCoef, suggestMates } from '../lib/pedigree'
 import { get, remove, save, useCollection } from '../lib/store'
-import { Badge, Empty, ErrorText, Field, Modal, PigeonSelect, Tabs, confirmDel } from '../components/ui'
+import { Badge, Empty, ErrorText, Field, Modal, PigeonSelect, Stat, Tabs, confirmDel } from '../components/ui'
 import { PigeonForm } from './Pigeons'
 
 export function pairLabel(pr) {
@@ -193,6 +194,85 @@ function ClutchForm({ initial, onClose }) {
   )
 }
 
+// Çift karnesi: üretim verimi, yavruların uçuş başarısı ve satış geliri
+function pairReport(pr, clutches, pigeons, stats) {
+  const cl = clutches.filter((c) => c.pairId === pr.id)
+  const eggs = cl.reduce((t, c) => t + (+c.eggs || 0), 0)
+  const fertileKnown = cl.filter((c) => c.fertile !== '' && c.fertile != null)
+  const fertile = fertileKnown.reduce((t, c) => t + (+c.fertile || 0), 0)
+  const fertileEggs = fertileKnown.reduce((t, c) => t + (+c.eggs || 0), 0)
+  const hatched = cl.reduce((t, c) => t + (+c.hatched || 0), 0)
+  const kids = pigeons.filter((p) => p.fatherId === pr.maleId && p.motherId === pr.femaleId)
+  const sold = kids.filter((k) => k.status === 'satildi')
+  const scored = kids.map((k) => stats.get(k.id)).filter((s) => s?.avgScore != null)
+  return {
+    clutches: cl.length,
+    failed: cl.filter((c) => c.failed).length,
+    eggs,
+    fertileRate: fertileEggs ? fertile / fertileEggs : null,
+    hatchRate: eggs ? hatched / eggs : null,
+    hatched,
+    kids,
+    alive: kids.filter((k) => k.status === 'aktif').length,
+    sold: sold.length,
+    revenue: sold.reduce((t, k) => t + (+k.toPrice || 0), 0),
+    flightAvg: scored.length ? scored.reduce((t, s) => t + s.avgScore, 0) / scored.length : null,
+    flown: scored.length,
+  }
+}
+const pct = (v) => (v == null ? '—' : `%${Math.round(v * 100)}`)
+
+function PairReport({ pr, onClose, go }) {
+  const clutches = useCollection('clutches')
+  const pigeons = useCollection('pigeons')
+  const flights = useCollection('flights')
+  const stats = useMemo(() => flightStats(flights), [flights])
+  const r = pairReport(pr, clutches, pigeons, stats)
+  const coi = coiLabel(kinshipCoef(pr.maleId, pr.femaleId))
+  return (
+    <Modal title={`Çift karnesi — ${pairLabel(pr)}`} onClose={onClose} wide>
+      <div className="stats">
+        <Stat label="Kuluçka" value={r.clutches} sub={r.failed ? `${r.failed} bozuldu` : ''} />
+        <Stat label="Yumurta" value={r.eggs} sub={`Döllülük ${pct(r.fertileRate)}`} />
+        <Stat label="Çıkan yavru" value={r.hatched} sub={`Çıkım ${pct(r.hatchRate)}`} />
+        <Stat label="Kayıtlı yavru" value={r.kids.length} sub={`${r.alive} aktif`} />
+        <Stat label="Yavru uçuş puanı" value={r.flightAvg != null ? r.flightAvg.toFixed(1) : '—'} sub={r.flown ? `${r.flown} yavrudan` : 'kayıt yok'} />
+        <Stat label="Satış" value={r.sold} sub={money(r.revenue)} />
+      </div>
+      <p className="small">
+        Başlangıç: {fmtDate(pr.startDate)} · Yavru akrabalığı: <Badge tone={coi.tone}>{coi.text.split(' — ')[0]}</Badge>
+      </p>
+      <h3>Yavrular</h3>
+      {r.kids.length === 0 ? (
+        <p className="small muted">Bu çiftten kayıtlı yavru yok.</p>
+      ) : (
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Kuş</th>
+                <th>Doğum</th>
+                <th>Durum</th>
+                <th>Uçuş puanı</th>
+              </tr>
+            </thead>
+            <tbody>
+              {r.kids.map((k) => (
+                <tr key={k.id} className="link-tr" onClick={() => go(`kus/${k.id}`)}>
+                  <td>{pigeonLabel(k)}</td>
+                  <td>{fmtDate(k.birthDate)}</td>
+                  <td>{STATUS[k.status]}</td>
+                  <td>{stats.get(k.id)?.avgScore?.toFixed(1) ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
 function MateSuggest({ onPair }) {
   const pigeons = useCollection('pigeons')
   const pairs = useCollection('pairs')
@@ -263,6 +343,7 @@ export default function Breeding({ go }) {
   const [clutchEdit, setClutchEdit] = useState(null)
   const [newChick, setNewChick] = useState(null)
   const [showClosed, setShowClosed] = useState(false)
+  const [report, setReport] = useState(null)
 
   const pairStats = useMemo(() => {
     const m = {}
@@ -433,6 +514,9 @@ export default function Breeding({ go }) {
                   </div>
                   {kin && <div className="small warn-text">⚠️ {kin.text}</div>}
                   <div className="row gap-s">
+                    <button className="btn small primary" onClick={() => setReport(pr)}>
+                      📋 Karne
+                    </button>
                     <button className="btn small" onClick={() => setPairEdit(pr)}>
                       Düzenle
                     </button>
@@ -451,6 +535,7 @@ export default function Breeding({ go }) {
 
       {tab === 'oner' && <MateSuggest onPair={(m, f) => setPairEdit({ maleId: m, femaleId: f })} />}
 
+      {report && <PairReport pr={report} onClose={() => setReport(null)} go={go} />}
       {pairEdit && <PairForm initial={pairEdit} onClose={() => setPairEdit(null)} />}
       {clutchEdit && <ClutchForm initial={clutchEdit} onClose={() => setClutchEdit(null)} />}
       {newChick && <PigeonForm initial={newChick} onClose={() => setNewChick(null)} onSaved={(r) => go(`kus/${r.id}`)} />}
