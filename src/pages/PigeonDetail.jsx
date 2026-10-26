@@ -81,8 +81,8 @@ export default function PigeonDetail({ id, go }) {
           ← Geri
         </button>
         <div className="row gap-s no-print">
-          <button className="btn small ghost" onClick={() => window.print()}>
-            Yazdır
+          <button className="btn small" onClick={() => go(`belge/${p.id}`)}>
+            📜 Soy kütüğü
           </button>
           <button className="btn small" onClick={() => setEdit(true)}>
             Düzenle

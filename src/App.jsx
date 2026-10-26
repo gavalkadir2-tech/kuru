@@ -5,6 +5,7 @@ import { migrateLegacyPhotos } from './lib/photos'
 import { supabase } from './lib/supabase'
 import Assistant from './pages/Assistant'
 import Breeding from './pages/Breeding'
+import Certificate, { SharedPedigree } from './pages/Certificate'
 import Dashboard from './pages/Dashboard'
 import Feeding from './pages/Feeding'
 import Health from './pages/Health'
@@ -80,6 +81,9 @@ export default function App() {
     setSyncUser(session?.user || null)
   }, [session?.user?.id])
 
+  // Paylaşılan soy kütüğü bağlantısı giriş gerektirmez
+  if (route.startsWith('soy/')) return <SharedPedigree code={route.slice(4)} />
+
   if (supabase && session === undefined) return <div className="splash">🕊️</div>
   if (supabase && !session && !skipAuth)
     return (
@@ -92,7 +96,7 @@ export default function App() {
     )
 
   const [page, param] = route.split('/')
-  const active = page === 'kus' ? 'kuslar' : page
+  const active = page === 'kus' || page === 'belge' ? 'kuslar' : page
   let content
   switch (page) {
     case 'kuslar':
@@ -100,6 +104,9 @@ export default function App() {
       break
     case 'kus':
       content = <PigeonDetail id={param} go={go} />
+      break
+    case 'belge':
+      content = <Certificate id={param} go={go} />
       break
     case 'uretim':
       content = <Breeding go={go} />

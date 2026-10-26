@@ -1304,3 +1304,166 @@ code {
   padding: 1px 5px;
   border-radius: 5px;
 }
+
+/* ---------- Soy kütüğü belgesi ---------- */
+.shared {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.certificate {
+  background: #fff;
+  color: #1d2a30;
+  border: 2px solid #c9a96e;
+  outline: 6px solid #fff;
+  box-shadow: 0 0 0 7px #1f4e5f;
+  border-radius: 6px;
+  padding: 22px;
+  margin: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-x: auto;
+}
+.cert-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 2px solid #c9a96e;
+  padding-bottom: 12px;
+}
+.cert-head > div {
+  flex: 1;
+}
+.cert-head h1 {
+  margin: 0;
+  color: #1f4e5f;
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.5px;
+}
+.cert-head p {
+  margin: 0;
+  font-weight: 600;
+}
+.cert-qr {
+  width: 96px;
+  height: 96px;
+}
+.cert-bird {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.cert-photo {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e3ddd0;
+}
+.cert-fields {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px 16px;
+}
+.cert-fields span,
+.cert-foot span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7a80;
+}
+.cert-fields .wide {
+  grid-column: 1 / -1;
+}
+.certificate .ped-box {
+  background: #f8f6f1;
+  border-color: #e3ddd0;
+  color: #1d2a30;
+}
+.ped-traits {
+  font-size: 11px;
+  color: #6b7a80;
+}
+.cert-foot {
+  display: flex;
+  gap: 24px;
+  border-top: 1px solid #e3ddd0;
+  padding-top: 12px;
+}
+.cert-foot .sign {
+  margin-left: auto;
+  min-width: 180px;
+  border-bottom: 1px solid #1d2a30;
+  height: 40px;
+}
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  .certificate {
+    margin: 0;
+    box-shadow: none;
+    outline: none;
+    overflow: visible;
+    break-inside: avoid;
+  }
+  .shared {
+    padding: 0;
+  }
+  html,
+  body,
+  .app {
+    background: #fff !important;
+  }
+  .certificate {
+    padding: 0;
+    border: 0;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .cert-head {
+    padding-bottom: 6px;
+  }
+  .cert-head h1 {
+    font-size: 20px;
+  }
+  .cert-qr {
+    width: 84px;
+    height: 84px;
+  }
+  .cert-photo {
+    width: 96px;
+    height: 96px;
+  }
+  .cert-fields {
+    gap: 4px 12px;
+  }
+  .certificate .pedigree {
+    min-width: 0;
+    padding: 0;
+  }
+  .certificate .ped-parents {
+    gap: 3px;
+    padding-left: 8px;
+  }
+  .certificate .ped-branch {
+    gap: 8px;
+  }
+  .certificate .ped-box {
+    width: 235px;
+    padding: 3px 8px;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+  .cert-foot {
+    padding-top: 6px;
+  }
+}
