@@ -1,15 +1,25 @@
 import { useEffect, useState } from 'react'
 import Auth from './Auth'
-import { setSyncUser, useAutoSync, useSyncState } from './lib/store'
+import { VoiceFab } from './components/VoiceEntry'
+import { getSettings, list, save, saveSettings, setSyncUser, useAutoSync, useSyncState } from './lib/store'
+import { migratePeople } from './lib/people'
+import { resolveLoft, useIsHelper } from './lib/members'
+import { migrateLegacyPhotos } from './lib/photos'
 import { supabase } from './lib/supabase'
 import Assistant from './pages/Assistant'
 import Breeding from './pages/Breeding'
+import Certificate, { SharedPedigree } from './pages/Certificate'
 import Dashboard from './pages/Dashboard'
 import Feeding from './pages/Feeding'
+import Flights from './pages/Flights'
+import Labels from './pages/Labels'
+import Ledger from './pages/Ledger'
 import Health from './pages/Health'
 import PigeonDetail from './pages/PigeonDetail'
+import People, { PersonDetail } from './pages/People'
 import Pigeons from './pages/Pigeons'
 import Settings from './pages/Settings'
+import Stock from './pages/Stock'
 import Trade from './pages/Trade'
 
 const NAV = [
@@ -18,12 +28,18 @@ const NAV = [
   { id: 'uretim', icon: '🥚', label: 'Üretim' },
   { id: 'saglik', icon: '🩺', label: 'Sağlık' },
   { id: 'yem', icon: '🌾', label: 'Yemleme' },
+  { id: 'ucus', icon: '🏆', label: 'Uçuş & Oyun' },
   { id: 'asistan', icon: '🤖', label: 'AI Asistan' },
+  { id: 'stok', icon: '📦', label: 'Stok' },
   { id: 'alimsatim', icon: '🤝', label: 'Alım-Satım' },
+  { id: 'kisiler', icon: '👥', label: 'Kişiler' },
+  { id: 'defter', icon: '📒', label: 'Gelir-Gider' },
   { id: 'ayarlar', icon: '⚙️', label: 'Ayarlar' },
 ]
 // Telefonda alt çubukta görünenler
 const MOBILE_NAV = ['ana', 'kuslar', 'uretim', 'saglik', 'asistan']
+// Yardımcı hesabının göremediği sayfalar (satış, fiyat ve kişisel bilgiler)
+const HELPER_HIDDEN = ['alimsatim', 'defter', 'kisiler', 'kisi']
 
 function useRoute() {
   const read = () => window.location.hash.replace(/^#\/?/, '') || 'ana'
@@ -65,6 +81,11 @@ export default function App() {
   useAutoSync()
 
   useEffect(() => {
+    migrateLegacyPhotos(list, save)
+    migratePeople(getSettings, saveSettings)
+  }, [])
+
+  useEffect(() => {
     if (!supabase) return setSession(null)
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
@@ -72,8 +93,18 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    setSyncUser(session?.user || null)
+    const user = session?.user
+    if (!user) return setSyncUser(null)
+    let alive = true
+    resolveLoft(user).then(({ ownerId, role }) => alive && setSyncUser(user, ownerId, role))
+    return () => {
+      alive = false
+    }
   }, [session?.user?.id])
+  const helper = useIsHelper()
+
+  // Paylaşılan soy kütüğü bağlantısı giriş gerektirmez
+  if (route.startsWith('soy/')) return <SharedPedigree code={route.slice(4)} />
 
   if (supabase && session === undefined) return <div className="splash">🕊️</div>
   if (supabase && !session && !skipAuth)
@@ -86,8 +117,10 @@ export default function App() {
       />
     )
 
-  const [page, param] = route.split('/')
-  const active = page === 'kus' ? 'kuslar' : page
+  const [routePage, param] = route.split('/')
+  const page = helper && HELPER_HIDDEN.includes(routePage) ? 'ana' : routePage
+  const navItems = helper ? NAV.filter((n) => !HELPER_HIDDEN.includes(n.id)) : NAV
+  const active = ['kus', 'belge', 'etiket'].includes(page) ? 'kuslar' : page === 'kisi' ? 'kisiler' : page
   let content
   switch (page) {
     case 'kuslar':
@@ -95,6 +128,12 @@ export default function App() {
       break
     case 'kus':
       content = <PigeonDetail id={param} go={go} />
+      break
+    case 'belge':
+      content = <Certificate id={param} go={go} />
+      break
+    case 'etiket':
+      content = <Labels ids={param} go={go} />
       break
     case 'uretim':
       content = <Breeding go={go} />
@@ -107,6 +146,21 @@ export default function App() {
       break
     case 'asistan':
       content = <Assistant />
+      break
+    case 'ucus':
+      content = <Flights go={go} />
+      break
+    case 'stok':
+      content = <Stock />
+      break
+    case 'kisiler':
+      content = <People go={go} />
+      break
+    case 'kisi':
+      content = <PersonDetail id={param} go={go} />
+      break
+    case 'defter':
+      content = <Ledger go={go} />
       break
     case 'alimsatim':
       content = <Trade go={go} />
@@ -142,7 +196,7 @@ export default function App() {
           </div>
           <SyncDot />
         </div>
-        <nav>{nav(NAV, 'side-link')}</nav>
+        <nav>{nav(navItems, 'side-link')}</nav>
         {supabase && !session && (
           <button
             className="btn small block"
@@ -164,7 +218,8 @@ export default function App() {
         <SyncDot />
       </header>
       <main>{content}</main>
-      <nav className="bottom-nav no-print">{nav(NAV.filter((n) => MOBILE_NAV.includes(n.id)), 'bottom-link')}</nav>
+      {!['asistan', 'belge', 'etiket'].includes(page) && <VoiceFab />}
+      <nav className="bottom-nav no-print">{nav(navItems.filter((n) => MOBILE_NAV.includes(n.id)), 'bottom-link')}</nav>
     </div>
   )
 }

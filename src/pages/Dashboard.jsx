@@ -1,6 +1,8 @@
 import { daysBetween, fmtDate, money, today } from '../lib/format'
-import { get, useCollection, useSettings } from '../lib/store'
-import { Badge, Stat } from '../components/ui'
+import { get, remove, useCollection, useSettings } from '../lib/store'
+import { Badge, Stat, confirmDel } from '../components/ui'
+import { fmtQty, stockLevels } from '../lib/stock'
+import { useIsHelper } from '../lib/members'
 import { clutchDates, clutchStatus, pairLabel } from './Breeding'
 
 export default function Dashboard({ go }) {
@@ -9,6 +11,11 @@ export default function Dashboard({ go }) {
   const pairs = useCollection('pairs')
   const clutches = useCollection('clutches')
   const health = useCollection('health')
+  const notes = useCollection('notes')
+  const helper = useIsHelper()
+  useCollection('stockMoves')
+  useCollection('stock')
+  const lowStock = stockLevels().filter((l) => l.low)
   const t = today()
   const year = t.slice(0, 4)
 
@@ -21,7 +28,8 @@ export default function Dashboard({ go }) {
   const events = []
   for (const c of activeClutches) {
     const d = clutchDates(c)
-    const label = pairLabel(get('pairs', c.pairId))
+    // Yumurtalar bakıcıdaysa kontrol edilecek yer bakıcının yuvasıdır
+    const label = pairLabel(get('pairs', c.pairId)) + (c.fosterPairId ? ` → bakıcıda: ${pairLabel(get('pairs', c.fosterPairId))}` : '')
     if (!c.hatchDate && d.expectedHatch) events.push({ date: d.expectedHatch, icon: '🐣', text: `Çıkış bekleniyor · ${label}`, to: 'uretim' })
     if (!c.hatchDate && d.candleDate && d.candleDate >= t) events.push({ date: d.candleDate, icon: '🔦', text: `Yumurta ışık kontrolü · ${label}`, to: 'uretim' })
     if (c.hatchDate) {
@@ -57,7 +65,7 @@ export default function Dashboard({ go }) {
         <Stat label="Aktif çift" value={pairs.filter((p) => p.active !== false).length} onClick={() => go('uretim')} />
         <Stat label="Kuluçka / yavrulu" value={activeClutches.length} onClick={() => go('uretim')} />
         <Stat label={`${year} üretim`} value={born.length} sub="yavru" onClick={() => go('kuslar')} />
-        <Stat label={`${year} satış`} value={sales.length} sub={money(sales.reduce((s, p) => s + (+p.toPrice || 0), 0))} onClick={() => go('alimsatim')} />
+        {!helper && <Stat label={`${year} satış`} value={sales.length} sub={money(sales.reduce((s, p) => s + (+p.toPrice || 0), 0))} onClick={() => go('alimsatim')} />}
         <Stat
           label="Son ilaçlama"
           value={daysSinceHealth == null ? '—' : `${daysSinceHealth} gün`}
@@ -66,6 +74,12 @@ export default function Dashboard({ go }) {
           onClick={() => go('saglik')}
         />
       </div>
+
+      {lowStock.length > 0 && (
+        <button className="alert warn link-row" onClick={() => go('stok')}>
+          📦 Stok azaldı: {lowStock.map((l) => `${l.item.name} (${fmtQty(l.qty)} ${l.item.unit})`).join(', ')}
+        </button>
+      )}
 
       <div className="grid-2">
         <div className="card">
@@ -98,6 +112,23 @@ export default function Dashboard({ go }) {
         </div>
       </div>
 
+      {notes.length > 0 && (
+        <div className="card">
+          <h3>📝 Notlar</h3>
+          {notes.slice(0, 6).map((n) => (
+            <div key={n.id} className="row between list-row small">
+              <span>
+                <span className="muted">{fmtDate(n.date)} · </span>
+                {n.text}
+              </span>
+              <button className="btn tiny ghost danger-text" onClick={() => confirmDel('Not') && remove('notes', n.id)}>
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="quick">
         <button className="quick-btn" onClick={() => go('saglik')}>
           🩺<span>Hastalık tahmini</span>
@@ -108,9 +139,11 @@ export default function Dashboard({ go }) {
         <button className="quick-btn" onClick={() => go('asistan')}>
           🤖<span>AI asistan</span>
         </button>
-        <button className="quick-btn" onClick={() => go('alimsatim')}>
-          🤝<span>Alım-satım</span>
-        </button>
+        {!helper && (
+          <button className="quick-btn" onClick={() => go('alimsatim')}>
+            🤝<span>Alım-satım</span>
+          </button>
+        )}
       </div>
 
       {active.length === 0 && (

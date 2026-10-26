@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { HEALTH_TYPES, ORIGIN, SEX, STATUS } from '../lib/constants'
 import { ageText, fmtDate, money, pigeonLabel } from '../lib/format'
-import { offspring } from '../lib/pedigree'
+import { coiLabel, inbreedingOf, offspring } from '../lib/pedigree'
 import { get, remove, useCollection, useRecord } from '../lib/store'
-import { Badge, Empty, Tabs, confirmDel } from '../components/ui'
-import { PigeonForm, STATUS_TONE, parentLabel } from './Pigeons'
+import { Badge, Empty, Gallery, Tabs, confirmDel } from '../components/ui'
+import { PhotoImg, deletePhoto } from '../lib/photos'
+import { PigeonForm, STATUS_TONE, pairText, parentLabel } from './Pigeons'
 import { HealthForm } from './Health'
+import { useIsHelper } from '../lib/members'
+import { PigeonFlights } from './Flights'
+import Growth from './Growth'
 
 function PedNode({ id, text, gen, maxGen, go, role }) {
   const p = id ? get('pigeons', id) : null
@@ -48,6 +52,7 @@ export default function PigeonDetail({ id, go }) {
   const pairs = useCollection('pairs')
   const clutches = useCollection('clutches')
   useCollection('pigeons')
+  const helper = useIsHelper()
   const [tab, setTab] = useState('soy')
   const [edit, setEdit] = useState(false)
   const [addHealth, setAddHealth] = useState(false)
@@ -69,6 +74,7 @@ export default function PigeonDetail({ id, go }) {
   const del = () => {
     if (!confirmDel(pigeonLabel(p))) return
     remove('pigeons', p.id)
+    ;(p.photos || []).forEach((ph) => deletePhoto(ph.id))
     go('kuslar')
   }
 
@@ -79,8 +85,11 @@ export default function PigeonDetail({ id, go }) {
           ← Geri
         </button>
         <div className="row gap-s no-print">
-          <button className="btn small ghost" onClick={() => window.print()}>
-            Yazdır
+          <button className="btn small" onClick={() => go(`belge/${p.id}`)}>
+            📜 Soy kütüğü
+          </button>
+          <button className="btn small" onClick={() => go(`etiket/${p.id}`)}>
+            🏷️ Etiket
           </button>
           <button className="btn small" onClick={() => setEdit(true)}>
             Düzenle
@@ -92,7 +101,7 @@ export default function PigeonDetail({ id, go }) {
       </div>
 
       <div className="detail-head card">
-        {p.photo ? <img src={p.photo} alt="" className="detail-photo" /> : <div className="avatar big">{p.sex === 'D' ? '♀' : p.sex === 'E' ? '♂' : '🕊️'}</div>}
+        <PhotoImg id={p.photos?.[0]?.id} className="detail-photo" fallback={<div className="avatar big">{p.sex === 'D' ? '♀' : p.sex === 'E' ? '♂' : '🕊️'}</div>} />
         <div>
           <h1>{p.ring}</h1>
           {p.name && <p className="lead">{p.name}</p>}
@@ -109,6 +118,16 @@ export default function PigeonDetail({ id, go }) {
         <div>
           <span>Doğum</span>
           {fmtDate(p.birthDate)} ({ageText(p.birthDate)})
+        </div>
+        {p.fosterPairId && (
+          <div>
+            <span>Bakıcı (büyüten çift)</span>
+            {pairText(get('pairs', p.fosterPairId))}
+          </div>
+        )}
+        <div>
+          <span>Akrabalık katsayısı</span>
+          {coiLabel(inbreedingOf(p.id)).text}
         </div>
         <div>
           <span>Kafes</span>
@@ -130,14 +149,14 @@ export default function PigeonDetail({ id, go }) {
         {p.origin !== 'uretim' && (
           <div>
             <span>Geliş</span>
-            {fmtDate(p.fromDate)} {p.fromPrice !== '' && p.fromPrice != null && `· ${money(p.fromPrice)}`}
+            {fmtDate(p.fromDate)} {!helper && p.fromPrice !== '' && p.fromPrice != null && `· ${money(p.fromPrice)}`}
             {p.fromPhone && ` · ${p.fromPhone}`}
           </div>
         )}
         {['satildi', 'verildi'].includes(p.status) && (
           <div>
             <span>{p.status === 'satildi' ? 'Satıldı' : 'Verildi'}</span>
-            {p.toName} · {fmtDate(p.toDate)} {p.status === 'satildi' && `· ${money(p.toPrice)}`}
+            {p.toName} · {fmtDate(p.toDate)} {p.status === 'satildi' && !helper && `· ${money(p.toPrice)}`}
             {p.toPhone && ` · ${p.toPhone}`} {p.toCity && ` · ${p.toCity}`}
           </div>
         )}
@@ -161,10 +180,16 @@ export default function PigeonDetail({ id, go }) {
         )}
       </div>
 
+      {p.photos?.length > 1 && (
+        <div className="card">
+          <Gallery photos={p.photos} />
+        </div>
+      )}
+
       <Tabs
         value={tab}
         onChange={setTab}
-        tabs={{ soy: 'Soy Ağacı', yavru: `Yavrular (${kids.length})`, saglik: `Sağlık (${myHealth.length})`, uretim: `Üretim (${myPairs.length})` }}
+        tabs={{ soy: 'Soy Ağacı', yavru: `Yavrular (${kids.length})`, saglik: `Sağlık (${myHealth.length})`, uretim: `Üretim (${myPairs.length})`, ucus: 'Uçuş', gelisim: 'Gelişim' }}
       />
 
       {tab === 'soy' && (
@@ -246,6 +271,9 @@ export default function PigeonDetail({ id, go }) {
         ) : (
           <Empty icon="🥚" title="Eşleştirme kaydı yok" />
         ))}
+
+      {tab === 'ucus' && <PigeonFlights pigeonId={p.id} />}
+      {tab === 'gelisim' && <Growth pigeonId={p.id} />}
 
       {edit && <PigeonForm initial={p} onClose={() => setEdit(false)} />}
       {addHealth && <HealthForm initial={{ scope: 'some', pigeonIds: [p.id] }} onClose={() => setAddHealth(false)} />}

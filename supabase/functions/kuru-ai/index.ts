@@ -28,7 +28,10 @@ Kurallar:
 - Yalnızca güvercinlik, kuş bakımı ve ilgili konularda yardım et.`
 
 type Body = {
-  task: 'chat' | 'diagnose' | 'ration' | 'care'
+  task: 'chat' | 'diagnose' | 'ration' | 'care' | 'parse'
+  text?: string
+  // deno-lint-ignore no-explicit-any
+  context?: Record<string, any>
   messages?: { role: 'user' | 'assistant'; content: string; image?: string }[]
   summary?: string
   date?: string
@@ -107,6 +110,33 @@ function buildMessages(b: Body) {
         .join('\n')
       return [{ role: 'user', content: text }]
     }
+    case 'parse': {
+      const text = [
+        'Güvercin yetiştiricisinin sesle söylediği notu programa girilecek kayıtlara dönüştür.',
+        `Bugünün tarihi: ${b.date}. "dün", "bugün", "geçen salı" gibi ifadeleri bu tarihe göre YYYY-AA-GG biçimine çevir.`,
+        'Kuşları, çiftleri, stok kalemlerini ve rasyonları aşağıdaki listelerdeki id değerleriyle eşleştir (halka numarasının son rakamları, kuş adı veya yuva numarasıyla söylenmiş olabilir). Eşleşme yoksa id alanını boş bırak.',
+        '',
+        `Program verisi (JSON):\n${JSON.stringify(b.context || {})}`,
+        '',
+        `Söylenen not: «${b.text || ''}»`,
+        '',
+        'YALNIZCA şu biçimde geçerli JSON döndür, başka metin yazma: {"actions":[ ... ]}',
+        'Kullanılabilecek eylemler:',
+        '{"type":"egg","pairId":"","eggNo":1,"date":""} — yumurtlama (eggNo 1 veya 2)',
+        '{"type":"hatch","pairId":"","count":2,"date":""} — yavru çıkışı',
+        '{"type":"foster","pairId":"","fosterPairId":"","eggs":2,"date":""} — bir çiftin yumurtalarının bakıcı çifte aktarılması (pairId gerçek anne-baba, fosterPairId bakıcı)',
+        '{"type":"health","medicine":"","dose":"","diagnosis":"","scope":"all","pigeonIds":[],"date":"","nextDate":"","stockItemId":"","stockQty":0} — ilaç/aşı/tedavi (scope "all" tüm sürü, "some" seçili kuşlar)',
+        '{"type":"feeding","feed":"","amountGram":0,"date":"","rationId":"","stockItemId":""} — yemleme',
+        '{"type":"weight","pigeonId":"","gram":0,"date":""} — tartı',
+        '{"type":"flight","pigeonIds":[],"durationMin":0,"score":0,"date":"","notes":""} — uçuş/oyun (score 1-10)',
+        '{"type":"status","pigeonId":"","status":"satildi|verildi|oldu|kayip","toName":"","toPrice":0,"date":""} — kuş durumu değişikliği',
+        '{"type":"stock_buy","stockItemId":"","qty":0,"cost":0,"date":""} — stok alımı',
+        '{"type":"expense","amount":0,"category":"","note":"","date":""} veya aynı alanlarla {"type":"income"} — diğer gelir/gider',
+        '{"type":"note","text":""} — yukarıdakilere uymayan bilgi',
+        'Her eyleme kısa Türkçe açıklama için "summary" alanı ekle. Emin olmadığın bilgiyi uydurma.',
+      ].join('\n')
+      return [{ role: 'user', content: text }]
+    }
     default: {
       const msgs = (b.messages || []).slice(-12).filter((m) => m.content?.trim())
       if (!msgs.length || msgs[msgs.length - 1].role !== 'user') throw new Error('Soru boş')
@@ -132,7 +162,7 @@ async function callClaude(messages: Msg[], task: Body['task']) {
     max_tokens: 8000,
     system: SYSTEM,
     thinking: { type: 'adaptive' },
-    output_config: { effort: task === 'chat' ? 'low' : 'medium' },
+    output_config: { effort: task === 'chat' || task === 'parse' ? 'low' : 'medium' },
     messages,
     // Güvenlik sınıflandırıcısı reddederse uygun modele otomatik geç
     betas: ['server-side-fallback-2026-07-01'],
@@ -153,7 +183,7 @@ async function callClaude(messages: Msg[], task: Body['task']) {
 }
 
 // Gemini REST API (generateContent). Mesajlar Claude biçiminden çevrilir.
-async function callGemini(messages: Msg[]) {
+async function callGemini(messages: Msg[], jsonOut = false) {
   const toParts = (content: unknown) =>
     typeof content === 'string'
       ? [{ text: content }]
@@ -166,7 +196,7 @@ async function callGemini(messages: Msg[]) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents: messages.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: toParts(m.content) })),
-      generationConfig: { maxOutputTokens: 8000 },
+      generationConfig: { maxOutputTokens: 8000, ...(jsonOut ? { responseMimeType: 'application/json' } : {}) },
     }),
   })
   // deno-lint-ignore no-explicit-any
@@ -214,7 +244,7 @@ Deno.serve(async (req) => {
 
   try {
     const messages = buildMessages(body)
-    return GEMINI_KEY ? await callGemini(messages) : await callClaude(messages, body.task)
+    return GEMINI_KEY ? await callGemini(messages, body.task === 'parse') : await callClaude(messages, body.task)
   } catch (e) {
     console.error(e)
     if (e instanceof Anthropic.RateLimitError) return json({ error: 'Çok fazla istek; biraz sonra tekrar deneyin.' }, 429)

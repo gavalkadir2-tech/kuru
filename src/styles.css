@@ -16,6 +16,7 @@
   --danger-bg: #fbe4e2;
   --info: #1e5a8a;
   --info-bg: #e2eef8;
+  --chart-1: #0b84a5;
   --radius: 14px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 14px rgba(0, 0, 0, 0.04);
   --sidebar: 236px;
@@ -41,6 +42,7 @@
     --danger-bg: #3d1d1b;
     --info: #8cc4f0;
     --info-bg: #17293a;
+    --chart-1: #1fa2c0;
     --shadow: none;
     color-scheme: dark;
   }
@@ -361,6 +363,9 @@ main {
 .nowrap {
   white-space: nowrap;
 }
+.chart-tip.below {
+  transform: translate(-50%, 14px);
+}
 .muted {
   color: var(--muted);
 }
@@ -410,6 +415,9 @@ main {
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+}
+.chart-tip.below {
+  transform: translate(-50%, 14px);
 }
 .btn:hover {
   background: var(--surface-2);
@@ -482,6 +490,9 @@ main {
   color: var(--muted);
   white-space: nowrap;
 }
+.chart-tip.below {
+  transform: translate(-50%, 14px);
+}
 .badge.ok {
   background: var(--ok-bg);
   color: var(--ok);
@@ -539,6 +550,9 @@ main {
   color: var(--muted);
   cursor: pointer;
   white-space: nowrap;
+}
+.chart-tip.below {
+  transform: translate(-50%, 14px);
 }
 .tabs button.active {
   background: var(--surface);
@@ -1209,4 +1223,508 @@ main {
   .scroll-x {
     overflow: visible;
   }
+}
+
+/* ---------- Fotoğraflar ---------- */
+.pigeon-card .thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex: none;
+}
+.photo-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.photo-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 104px;
+  flex: none;
+}
+.photo-tile img,
+.photo-tile .photo-ph {
+  width: 104px;
+  height: 104px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.photo-tile select {
+  min-height: 32px;
+  padding: 4px 6px;
+  font-size: 12px;
+}
+.photo-tile.view {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: zoom-in;
+  color: inherit;
+  text-align: center;
+}
+.photo-ph.add {
+  width: 104px;
+  height: 104px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+}
+.photo-ph.add span {
+  font-size: 12px;
+}
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #fff;
+  padding: 16px;
+  cursor: zoom-out;
+}
+.lightbox img {
+  max-width: 100%;
+  max-height: 85vh;
+  border-radius: 12px;
+}
+.keys {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.keys textarea {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+/* ---------- Soy kütüğü belgesi ---------- */
+.shared {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.certificate {
+  background: #fff;
+  color: #1d2a30;
+  border: 2px solid #c9a96e;
+  outline: 6px solid #fff;
+  box-shadow: 0 0 0 7px #1f4e5f;
+  border-radius: 6px;
+  padding: 22px;
+  margin: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-x: auto;
+}
+.cert-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 2px solid #c9a96e;
+  padding-bottom: 12px;
+}
+.cert-head > div {
+  flex: 1;
+}
+.cert-head h1 {
+  margin: 0;
+  color: #1f4e5f;
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.5px;
+}
+.cert-head p {
+  margin: 0;
+  font-weight: 600;
+}
+.cert-qr {
+  width: 96px;
+  height: 96px;
+}
+.cert-bird {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.cert-photo {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e3ddd0;
+}
+.cert-fields {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px 16px;
+}
+.cert-fields span,
+.cert-foot span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7a80;
+}
+.cert-fields .wide {
+  grid-column: 1 / -1;
+}
+.certificate .ped-box {
+  background: #f8f6f1;
+  border-color: #e3ddd0;
+  color: #1d2a30;
+}
+.ped-traits {
+  font-size: 11px;
+  color: #6b7a80;
+}
+.cert-foot {
+  display: flex;
+  gap: 24px;
+  border-top: 1px solid #e3ddd0;
+  padding-top: 12px;
+}
+.cert-foot .sign {
+  margin-left: auto;
+  min-width: 180px;
+  border-bottom: 1px solid #1d2a30;
+  height: 40px;
+}
+@media print {
+  @page {
+    margin: 10mm;
+  }
+  @page cert {
+    size: A4 landscape;
+  }
+  .certificate {
+    page: cert;
+    margin: 0;
+    box-shadow: none;
+    outline: none;
+    overflow: visible;
+    break-inside: avoid;
+  }
+  .shared {
+    padding: 0;
+  }
+  html,
+  body,
+  .app {
+    background: #fff !important;
+  }
+  .certificate {
+    padding: 0;
+    border: 0;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .cert-head {
+    padding-bottom: 6px;
+  }
+  .cert-head h1 {
+    font-size: 20px;
+  }
+  .cert-qr {
+    width: 84px;
+    height: 84px;
+  }
+  .cert-photo {
+    width: 96px;
+    height: 96px;
+  }
+  .cert-fields {
+    gap: 4px 12px;
+  }
+  .certificate .pedigree {
+    min-width: 0;
+    padding: 0;
+  }
+  .certificate .ped-parents {
+    gap: 3px;
+    padding-left: 8px;
+  }
+  .certificate .ped-branch {
+    gap: 8px;
+  }
+  .certificate .ped-box {
+    width: 235px;
+    padding: 3px 8px;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+  .cert-foot {
+    padding-top: 6px;
+  }
+}
+
+/* ---------- Etiketler ---------- */
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4mm;
+}
+.label {
+  background: #fff;
+  color: #000;
+  border: 1px dashed #999;
+  border-radius: 2mm;
+  display: flex;
+  align-items: center;
+  gap: 2.5mm;
+  padding: 2mm;
+  overflow: hidden;
+  break-inside: avoid;
+  font-family: system-ui, sans-serif;
+}
+.label > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+.label span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.label.kucuk {
+  width: 50mm;
+  height: 30mm;
+  font-size: 7.5pt;
+}
+.label.kucuk img {
+  width: 24mm;
+  height: 24mm;
+}
+.label.orta {
+  width: 70mm;
+  height: 40mm;
+  font-size: 8.5pt;
+}
+.label.orta img {
+  width: 32mm;
+  height: 32mm;
+}
+.label.buyuk {
+  width: 90mm;
+  height: 55mm;
+  font-size: 10pt;
+}
+.label.buyuk img {
+  width: 45mm;
+  height: 45mm;
+}
+.label strong {
+  font-size: 1.15em;
+  letter-spacing: 0.3px;
+}
+.label-name {
+  font-weight: 600;
+}
+.label-loft {
+  font-size: 0.85em;
+  color: #555;
+}
+@media print {
+  .labels {
+    gap: 2mm;
+  }
+}
+.ok-text {
+  color: var(--ok);
+}
+.table tr.muted td {
+  color: var(--muted);
+}
+
+/* ---------- Sesle kayıt ---------- */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--bottom) + 16px + env(safe-area-inset-bottom));
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 24px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  z-index: 25;
+}
+@media (min-width: 900px) {
+  .fab {
+    bottom: 24px;
+    right: 24px;
+  }
+}
+.voice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+.mic {
+  align-self: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 0;
+  font-size: 34px;
+  background: var(--surface-2);
+  cursor: pointer;
+  color: var(--text);
+}
+.mic.on {
+  background: var(--danger);
+  color: #fff;
+  animation: pulse 1.2s infinite;
+}
+.voice-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.voice-action {
+  gap: 6px;
+  align-items: flex-start;
+}
+.voice-action.bad {
+  opacity: 0.75;
+}
+
+/* ---------- Toplu seçim ---------- */
+.pigeon-card.selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+.bulk-bar {
+  position: fixed;
+  left: 12px;
+  right: 84px;
+  bottom: calc(var(--bottom) + 12px + env(safe-area-inset-bottom));
+  z-index: 26;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--primary);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+@media (min-width: 900px) {
+  .bulk-bar {
+    left: calc(var(--sidebar) + 24px);
+    right: 100px;
+    bottom: 24px;
+  }
+}
+.link-tr {
+  cursor: pointer;
+}
+.link-tr:hover td {
+  background: var(--surface-2);
+}
+
+/* ---------- Grafik ---------- */
+.chart {
+  position: relative;
+}
+.chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  touch-action: pan-y;
+}
+.chart .grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.chart .tick {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.chart .line {
+  fill: none;
+  stroke: var(--chart-1);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.chart .area {
+  fill: var(--chart-1);
+  opacity: 0.1;
+}
+.chart .dot {
+  fill: var(--chart-1);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.chart .crosshair {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+.chart .end-label {
+  fill: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+.chart-tip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 12px));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
+}
+.chart-tip.below {
+  transform: translate(-50%, 14px);
+}
+.gen-title {
+  margin: 4px 0 8px;
+  font-size: 14px;
+}
+.gen-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 14px;
 }

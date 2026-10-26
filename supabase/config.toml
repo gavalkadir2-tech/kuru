@@ -1,2 +1,5 @@
 [functions.kuru-ai]
 verify_jwt = true
+
+[functions.kuru-notify]
+verify_jwt = false

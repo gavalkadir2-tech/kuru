@@ -3,6 +3,8 @@ import { download, fmtDate, today } from '../lib/format'
 import { COLLECTIONS, exportBackup, importBackup, list, pendingCount, saveSettings, syncNow, useSettings, useSyncState } from '../lib/store'
 import { cloudEnabled, supabase } from '../lib/supabase'
 import { Field } from '../components/ui'
+import NotificationsCard from '../components/NotificationsCard'
+import MembersCard from '../components/MembersCard'
 
 const NAMES = { pigeons: 'Güvercin', pairs: 'Çift', clutches: 'Kuluçka', health: 'Sağlık', feedings: 'Yemleme', rations: 'Rasyon', notes: 'Not' }
 
@@ -80,6 +82,10 @@ export default function Settings() {
           </p>
         )}
       </div>
+
+      <NotificationsCard />
+
+      <MembersCard />
 
       <div className="card">
         <h3>Yedekleme</h3>
