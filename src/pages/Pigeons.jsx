@@ -6,6 +6,7 @@ import { Badge, Empty, ErrorText, Field, Modal, PhotosEditor, PigeonSelect, Sear
 import { PhotoImg } from '../lib/photos'
 import { afterPigeonSave, findPerson } from '../lib/people'
 import { HealthForm } from './Health'
+import { FlightForm } from './Flights'
 
 export const STATUS_TONE = { aktif: 'ok', satildi: 'info', verildi: 'info', oldu: 'danger', kayip: 'warn' }
 
@@ -459,6 +460,9 @@ export default function Pigeons({ go }) {
           <button className="btn small" onClick={() => setBulk('health')}>
             💊 İlaç
           </button>
+          <button className="btn small" onClick={() => setBulk('flight')}>
+            🏆 Uçuş
+          </button>
           <button className="btn small" onClick={() => setBulk('status')}>
             🔁 Durum
           </button>
@@ -471,6 +475,7 @@ export default function Pigeons({ go }) {
         </div>
       )}
       {bulk === 'health' && <HealthForm initial={{ scope: 'some', pigeonIds: sel }} onClose={() => setBulk(null)} />}
+      {bulk === 'flight' && <FlightForm initial={{ pigeonIds: sel }} onClose={() => setBulk(null)} />}
       {bulk === 'status' && (
         <BulkStatusForm
           ids={sel}

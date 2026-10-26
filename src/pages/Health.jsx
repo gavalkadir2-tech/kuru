@@ -8,7 +8,7 @@ import { get, list, remove, save, useCollection } from '../lib/store'
 import { cloudEnabled } from '../lib/supabase'
 import { Badge, Empty, ErrorText, Field, Markdown, Modal, PhotoInput, PigeonSelect, SearchBox, Select, Tabs, confirmDel } from '../components/ui'
 
-function PigeonMulti({ value, onChange }) {
+export function PigeonMulti({ value, onChange }) {
   const pigeons = useCollection('pigeons').filter((p) => p.status === 'aktif')
   const [q, setQ] = useState('')
   const s = q.toLocaleLowerCase('tr')

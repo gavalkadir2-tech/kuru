@@ -1636,3 +1636,9 @@ code {
     bottom: 24px;
   }
 }
+.link-tr {
+  cursor: pointer;
+}
+.link-tr:hover td {
+  background: var(--surface-2);
+}

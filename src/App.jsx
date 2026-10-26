@@ -10,6 +10,7 @@ import Breeding from './pages/Breeding'
 import Certificate, { SharedPedigree } from './pages/Certificate'
 import Dashboard from './pages/Dashboard'
 import Feeding from './pages/Feeding'
+import Flights from './pages/Flights'
 import Labels from './pages/Labels'
 import Ledger from './pages/Ledger'
 import Health from './pages/Health'
@@ -26,6 +27,7 @@ const NAV = [
   { id: 'uretim', icon: '🥚', label: 'Üretim' },
   { id: 'saglik', icon: '🩺', label: 'Sağlık' },
   { id: 'yem', icon: '🌾', label: 'Yemleme' },
+  { id: 'ucus', icon: '🏆', label: 'Uçuş & Oyun' },
   { id: 'asistan', icon: '🤖', label: 'AI Asistan' },
   { id: 'stok', icon: '📦', label: 'Stok' },
   { id: 'alimsatim', icon: '🤝', label: 'Alım-Satım' },
@@ -132,6 +134,9 @@ export default function App() {
       break
     case 'asistan':
       content = <Assistant />
+      break
+    case 'ucus':
+      content = <Flights go={go} />
       break
     case 'stok':
       content = <Stock />

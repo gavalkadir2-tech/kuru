@@ -7,6 +7,7 @@ import { Badge, Empty, Gallery, Tabs, confirmDel } from '../components/ui'
 import { PhotoImg, deletePhoto } from '../lib/photos'
 import { PigeonForm, STATUS_TONE, parentLabel } from './Pigeons'
 import { HealthForm } from './Health'
+import { PigeonFlights } from './Flights'
 
 function PedNode({ id, text, gen, maxGen, go, role }) {
   const p = id ? get('pigeons', id) : null
@@ -179,7 +180,7 @@ export default function PigeonDetail({ id, go }) {
       <Tabs
         value={tab}
         onChange={setTab}
-        tabs={{ soy: 'Soy Ağacı', yavru: `Yavrular (${kids.length})`, saglik: `Sağlık (${myHealth.length})`, uretim: `Üretim (${myPairs.length})` }}
+        tabs={{ soy: 'Soy Ağacı', yavru: `Yavrular (${kids.length})`, saglik: `Sağlık (${myHealth.length})`, uretim: `Üretim (${myPairs.length})`, ucus: 'Uçuş' }}
       />
 
       {tab === 'soy' && (
@@ -261,6 +262,8 @@ export default function PigeonDetail({ id, go }) {
         ) : (
           <Empty icon="🥚" title="Eşleştirme kaydı yok" />
         ))}
+
+      {tab === 'ucus' && <PigeonFlights pigeonId={p.id} />}
 
       {edit && <PigeonForm initial={p} onClose={() => setEdit(false)} />}
       {addHealth && <HealthForm initial={{ scope: 'some', pigeonIds: [p.id] }} onClose={() => setAddHealth(false)} />}
