@@ -7,7 +7,7 @@ import { flightStats } from '../lib/performance'
 import { coiLabel, kinship, kinshipCoef, suggestMates } from '../lib/pedigree'
 import { get, list, remove, save, useCollection } from '../lib/store'
 import { Badge, confirmDel, Empty, ErrorText, Field, Mars, Modal, PageTitle, PigeonSelect, SearchBox, Select, Stat, Tabs, Venus } from '../components/ui'
-import { predict } from '../lib/genetics'
+import { phenoOfBird, simulate } from '../lib/colorSim'
 import { PigeonForm } from './Pigeons'
 import ColorGenetics from './ColorGenetics'
 import { MatingAdvisor } from '../components/AiPanels'
@@ -68,20 +68,20 @@ function BirdBrief({ id }) {
   )
 }
 
-// Ebeveynlerin kayıtlı genotipi varsa beklenen yavru renklerinin özeti
+// Ebeveynlerin renk bilgisinden (kayıtlı renk genetiği veya renk yazısı) beklenen yavru renkleri
 function ColorPreview({ maleId, femaleId }) {
-  const m = get('pigeons', maleId)?.genotype
-  const f = get('pigeons', femaleId)?.genotype
-  if (!m || !f) return null
-  const res = predict(m, f)
-  const top = (sex) => {
-    const map = new Map()
-    for (const r of res.filter((x) => x.sex === sex)) map.set(r.name, (map.get(r.name) || 0) + r.p)
-    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n, p]) => `${n} %${Math.round(p * 100)}`).join(', ')
-  }
+  const m = phenoOfBird(get('pigeons', maleId))
+  const f = phenoOfBird(get('pigeons', femaleId))
+  const res = useMemo(() => (m && f ? simulate(m, f, { n: 8000 }) : null), [maleId, femaleId, JSON.stringify(m), JSON.stringify(f)])
+  if (!res) return null
+  const top = (sex) =>
+    res[sex]
+      .slice(0, 3)
+      .map((r) => `${r.name} %${Math.round(r.p * 100)}`)
+      .join(', ')
   return (
     <div className="alert info full small">
-      <strong>Beklenen yavru renkleri</strong>
+      <strong>Beklenen yavru renkleri (yaklaşık)</strong>
       <div className="inline-icon">
         <Mars size={14} /> {top('E')}
       </div>

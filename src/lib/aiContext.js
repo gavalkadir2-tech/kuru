@@ -121,7 +121,7 @@ export function birdContext(id) {
   const kids = list('pigeons').filter((k) => k.fatherId === id || k.motherId === id)
   return compact({
     today: today(),
-    bird: { ...birdRow(p, fs.get(id), lw.get(id)), origin: p.origin, fromName: p.fromName, genotype: p.genotype },
+    bird: { ...birdRow(p, fs.get(id), lw.get(id)), origin: p.origin, fromName: p.fromName, colorGenetics: p.colorGenetics || p.genotype },
     pedigree: { father: anc(p.fatherId, 3) || p.fatherText, mother: anc(p.motherId, 3) || p.motherText },
     offspring: kids.map((k) => birdRow(k, fs.get(k.id), lw.get(k.id))),
     pairs: list('pairs')

@@ -45,7 +45,7 @@ const ACTIONS_DOC = [
 ].join('\n')
 
 type Body = {
-  task: 'chat' | 'diagnose' | 'ration' | 'care' | 'parse' | 'brief' | 'bird' | 'advisor'
+  task: 'chat' | 'diagnose' | 'ration' | 'care' | 'parse' | 'brief' | 'bird' | 'advisor' | 'color'
   text?: string
   // deno-lint-ignore no-explicit-any
   context?: Record<string, any>
@@ -143,6 +143,26 @@ function buildMessages(b: Body) {
       ].join('\n')
       return [{ role: 'user', content: text }]
     }
+    case 'color': {
+      const text = [
+        'Fotoğraftaki güvercinin tüy rengini ve desenini belirle. Yalnızca görünene göre karar ver; emin değilsen en olası seçeneği seç ve güveni düşür.',
+        b.notes ? `Yetiştiricinin notu: ${b.notes}` : '',
+        'YALNIZCA şu biçimde geçerli JSON döndür:',
+        '{"color":"","pattern":"","white":"","grizzle":"","almond":"","indigo":"","confidence":0.0,"explanation":""}',
+        'İzin verilen değerler:',
+        'color: kirmizi (kül kırmızı/kırmızı çubuklu-pullu), sari (seyreltik kırmızı), gok (mavi/gök çubuklu-pullu), gumusi (seyreltik mavi, kurşuni), kara (düz siyah), boz (düz seyreltik siyah, dun), kahve, haki, reskirmizi (tamamen düz, parlak koyu kızıl), ressari (tamamen düz sarı), ak (tamamen beyaz)',
+        'pattern: cubuklu, pullu, koyupullu, cubuksuz, bilinmiyor (düz renkli, ak veya görünmüyorsa bilinmiyor)',
+        'white: yok, az (birkaç beyaz tüy), karabas (gövde ak, baş ve/veya kuyruk renkli), alaca (beyaz-renkli karışık lekeler, çil), cokak (çoğunlukla ak, az renkli leke)',
+        'grizzle: yok, kircil (tüylerde tuz-biber gibi beyaz serpintisi), cokkircil (neredeyse ak, serpintili)',
+        'almond: yok, badem (sarımsı zemin üzerinde düzensiz koyu benekler)',
+        'indigo: yok, tek, cift',
+        'Karabaş tipi kuşta "color" baş rengini göstersin (kara başlıysa kara, sarı başlıysa sari, kızıl başlıysa kirmizi).',
+        'explanation: Türkçe, en fazla 2 cümle; neye bakarak karar verdiğini yaz.',
+      ]
+        .filter(Boolean)
+        .join('\n')
+      return [{ role: 'user', content: userContent(text, b.image) }]
+    }
     case 'brief': {
       const text = [
         `Bugün ${b.date}. Aşağıda güvercinliğin güncel verisi var. Yetiştiriciye bugün için kısa bir günlük özet hazırla.`,
@@ -231,7 +251,7 @@ async function callClaude(messages: Msg[], task: Body['task']) {
     system: SYSTEM,
     thinking: { type: 'adaptive' },
     // Hızlı işler düşük, analiz gerektirenler yüksek düşünme düzeyiyle
-    output_config: { effort: task === 'parse' || task === 'brief' ? 'low' : task === 'advisor' || task === 'bird' ? 'high' : 'medium' },
+    output_config: { effort: task === 'parse' || task === 'brief' || task === 'color' ? 'low' : task === 'advisor' || task === 'bird' ? 'high' : 'medium' },
     messages,
     // Güvenlik sınıflandırıcısı reddederse uygun modele otomatik geç
     betas: ['server-side-fallback-2026-07-01'],
@@ -313,7 +333,7 @@ Deno.serve(async (req) => {
 
   try {
     const messages = buildMessages(body)
-    return GEMINI_KEY ? await callGemini(messages, body.task === 'parse') : await callClaude(messages, body.task)
+    return GEMINI_KEY ? await callGemini(messages, body.task === 'parse' || body.task === 'color') : await callClaude(messages, body.task)
   } catch (e) {
     console.error(e)
     if (e instanceof Anthropic.RateLimitError) return json({ error: 'Çok fazla istek; biraz sonra tekrar deneyin.' }, 429)

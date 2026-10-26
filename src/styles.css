@@ -2212,3 +2212,25 @@ textarea:focus {
   align-items: center;
   gap: 6px;
 }
+.carriers summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--primary);
+  padding: 4px 0;
+}
+.carriers[open] summary {
+  margin-bottom: 6px;
+}
+.ai-photo {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.ai-photo img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex: none;
+}
