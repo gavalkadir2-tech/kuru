@@ -1,3 +1,4 @@
+import { Scale, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { daysBetween, fmtDate, num, today } from '../lib/format'
 import { get, remove, save, useCollection } from '../lib/store'
@@ -135,7 +136,7 @@ export default function Growth({ pigeonId }) {
         <ErrorText>{err}</ErrorText>
       </form>
       {rows.length === 0 ? (
-        <Empty icon="⚖️" title="Tartı kaydı yok">
+        <Empty icon={Scale} title="Tartı kaydı yok">
           Yavruları belirli aralıklarla tartarak gelişimini izleyin. Sesle de ekleyebilirsiniz: "Yıldız bugün 320 gram".
         </Empty>
       ) : (
@@ -175,8 +176,8 @@ export default function Growth({ pigeonId }) {
                         <td>{w.gram} g</td>
                         <td className={diff < 0 ? 'danger-text' : ''}>{diff == null ? '—' : `${diff > 0 ? '+' : ''}${diff} g`}</td>
                         <td>
-                          <button className="btn tiny ghost danger-text" onClick={() => confirmDel(`${fmtDate(w.date)} tartısı`) && remove('weights', w.id)}>
-                            ✕
+                          <button aria-label="Sil" className="btn tiny ghost danger-text" onClick={() => confirmDel(`${fmtDate(w.date)} tartısı`) && remove('weights', w.id)}>
+                            <X size={14} />
                           </button>
                         </td>
                       </tr>

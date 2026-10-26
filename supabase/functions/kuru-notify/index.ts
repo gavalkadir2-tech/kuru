@@ -135,18 +135,18 @@ export function dueEvents(data: Record<string, Rec[]>, today: string) {
     const start = c.egg2Date || c.egg1Date
     if (!c.hatchDate && start) {
       const hatch = addDays(start, INCUBATION_DAYS)
-      if (hatch === today) out.push(`🐣 Bugün çıkış bekleniyor: ${name(c.pairId)}`)
-      else if (hatch === tomorrow) out.push(`🐣 Yarın çıkış bekleniyor: ${name(c.pairId)}`)
-      if (addDays(start, CANDLE_DAY) === today) out.push(`🔦 Yumurta ışık kontrolü: ${name(c.pairId)}`)
+      if (hatch === today) out.push(`Bugün çıkış bekleniyor: ${name(c.pairId)}`)
+      else if (hatch === tomorrow) out.push(`Yarın çıkış bekleniyor: ${name(c.pairId)}`)
+      if (addDays(start, CANDLE_DAY) === today) out.push(`Yumurta ışık kontrolü: ${name(c.pairId)}`)
     }
     if (c.hatchDate) {
       const ringed = pigeons.filter((p) => p.clutchId === c.id).length
-      if (addDays(c.hatchDate, RING_DAY) === today && ringed < (+c.hatched || 0)) out.push(`💍 Halkalama günü: ${name(c.pairId)}`)
-      if (addDays(c.hatchDate, WEAN_DAY) === today) out.push(`🕊️ Yavru ayırma: ${name(c.pairId)}`)
+      if (addDays(c.hatchDate, RING_DAY) === today && ringed < (+c.hatched || 0)) out.push(`Halkalama günü: ${name(c.pairId)}`)
+      if (addDays(c.hatchDate, WEAN_DAY) === today) out.push(`Yavru ayırma: ${name(c.pairId)}`)
     }
   }
   for (const h of data.health || []) {
-    if (h.nextDate === today) out.push(`💊 ${h.medicine || h.diagnosis || 'Uygulama'} tekrarı bugün`)
+    if (h.nextDate === today) out.push(`${h.medicine || h.diagnosis || 'Uygulama'} tekrarı bugün`)
   }
   const moves = data.stockMoves || []
   const low = (data.stock || []).filter((s) => {
@@ -154,7 +154,7 @@ export function dueEvents(data: Record<string, Rec[]>, today: string) {
     const qty = moves.filter((m) => m.itemId === s.id).reduce((t, m) => t + (+m.qty || 0), 0)
     return qty <= +s.minQty
   })
-  if (low.length) out.push(`📦 Stok azaldı: ${low.map((s) => s.name).join(', ')}`)
+  if (low.length) out.push(`Stok azaldı: ${low.map((s) => s.name).join(', ')}`)
   return out
 }
 
@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
       if (!events.length) continue
       message = {
         title: `Kuru — Bugün ${events.length} iş var`,
-        body: events.slice(0, 4).join('\n') + (events.length > 4 ? `\n+${events.length - 4} iş daha` : ''),
+        body: events.slice(0, 4).map((e) => '• ' + e).join('\n') + (events.length > 4 ? `\n+${events.length - 4} iş daha` : ''),
         url: '/#/ana',
       }
     }

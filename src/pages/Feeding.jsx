@@ -1,4 +1,4 @@
-import { Wheat } from 'lucide-react'
+import { Pencil, Sparkles, Wheat, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { GRAINS, PERIODS } from '../lib/constants'
 import { exportCSV, fmtDate, money, num, today } from '../lib/format'
@@ -89,7 +89,13 @@ function RationBuilder() {
             Rasyonu hesapla
           </button>
           <button className="btn" onClick={runAI} disabled={loading || !cloudEnabled}>
-            {loading ? 'Hazırlanıyor…' : '🤖 Yapay zeka önerisi'}
+            {loading ? (
+              'Hazırlanıyor…'
+            ) : (
+              <>
+                <Sparkles size={16} /> Yapay zeka önerisi
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -153,7 +159,9 @@ function RationBuilder() {
 
       {ai && (
         <div className="card ai-card">
-          <h3>🤖 Yapay zeka önerisi</h3>
+          <h3>
+            <Sparkles size={18} /> Yapay zeka önerisi
+          </h3>
           <Markdown text={ai} />
         </div>
       )}
@@ -164,7 +172,7 @@ function RationBuilder() {
 function SavedRations() {
   const rations = useCollection('rations')
   const [open, setOpen] = useState(null)
-  if (!rations.length) return <Empty icon="🌾" title="Kayıtlı rasyon yok">Rasyon Oluştur sekmesinden hesaplayıp kaydedin.</Empty>
+  if (!rations.length) return <Empty icon={Wheat} title="Kayıtlı rasyon yok">Rasyon Oluştur sekmesinden hesaplayıp kaydedin.</Empty>
   return (
     <div className="card-list">
       {rations.map((r) => (
@@ -333,7 +341,7 @@ function FeedLog() {
         </div>
       </div>
       {rows.length === 0 ? (
-        <Empty icon="🌾" title="Yemleme kaydı yok" />
+        <Empty icon={Wheat} title="Yemleme kaydı yok" />
       ) : (
         <div className="table-wrap card">
           <table className="table">
@@ -354,15 +362,15 @@ function FeedLog() {
                   <td>{fmt1(+r.amount || 0)} g</td>
                   <td>{r.count ? `${fmt1(r.amount / r.count)} g` : '—'}</td>
                   <td className="nowrap">
-                    <button className="btn tiny" onClick={() => setEdit(r)}>
-                      ✎
+                    <button aria-label="Düzenle" className="btn tiny" onClick={() => setEdit(r)}>
+                      <Pencil size={14} />
                     </button>
-                    <button className="btn tiny ghost danger-text" onClick={() => {
+                    <button aria-label="Sil" className="btn tiny ghost danger-text" onClick={() => {
                         if (!confirmDel(`${fmtDate(r.date)} yemleme`)) return
                         remove('feedings', r.id)
                         removeLinkedMove(r.id)
                       }}>
-                      ✕
+                      <X size={14} />
                     </button>
                   </td>
                 </tr>

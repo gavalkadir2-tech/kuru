@@ -78,51 +78,51 @@ export function describe(a) {
   const pr = a.pairId && get('pairs', a.pairId)
   switch (a.type) {
     case 'egg':
-      return pr ? { text: `🥚 ${pairText(pr)} — ${a.eggNo === 2 ? '2.' : '1.'} yumurta, ${d}` } : { text: '🥚 Yumurtlama', error: 'Çift bulunamadı' }
+      return pr ? { text: `${pairText(pr)} — ${a.eggNo === 2 ? '2.' : '1.'} yumurta, ${d}` } : { text: 'Yumurtlama', error: 'Çift bulunamadı' }
     case 'hatch':
-      return pr ? { text: `🐣 ${pairText(pr)} — ${a.count || 1} yavru çıktı, ${d}` } : { text: '🐣 Çıkış', error: 'Çift bulunamadı' }
+      return pr ? { text: `${pairText(pr)} — ${a.count || 1} yavru çıktı, ${d}` } : { text: 'Çıkış', error: 'Çift bulunamadı' }
     case 'pair': {
       const m = get('pigeons', a.maleId)
       const f = get('pigeons', a.femaleId)
-      if (!m || !f) return { text: '💞 Yeni çift', error: 'Kuş bulunamadı' }
-      if (m.sex !== 'E' || f.sex !== 'D') return { text: `💞 ${m.ring} × ${f.ring}`, error: 'Erkek ve dişi ters ya da cinsiyet belirsiz' }
-      if (list('pairs').some((pr) => pr.active !== false && pr.maleId === m.id && pr.femaleId === f.id)) return { text: `💞 ${m.ring} × ${f.ring}`, error: 'Bu çift zaten var' }
-      return { text: `💞 Yeni çift: ${pigeonLabel(m)} × ${pigeonLabel(f)}${a.pairType ? ` (${a.pairType})` : ''}${a.nest ? `, yuva ${a.nest}` : ''}` }
+      if (!m || !f) return { text: 'Yeni çift', error: 'Kuş bulunamadı' }
+      if (m.sex !== 'E' || f.sex !== 'D') return { text: `${m.ring} × ${f.ring}`, error: 'Erkek ve dişi ters ya da cinsiyet belirsiz' }
+      if (list('pairs').some((pr) => pr.active !== false && pr.maleId === m.id && pr.femaleId === f.id)) return { text: `${m.ring} × ${f.ring}`, error: 'Bu çift zaten var' }
+      return { text: `Yeni çift: ${pigeonLabel(m)} × ${pigeonLabel(f)}${a.pairType ? ` (${a.pairType})` : ''}${a.nest ? `, yuva ${a.nest}` : ''}` }
     }
     case 'foster': {
       const fp = a.fosterPairId && get('pairs', a.fosterPairId)
-      if (!pr || !fp) return { text: '🔄 Bakıcıya aktarma', error: 'Çift veya bakıcı bulunamadı' }
-      if (fp.id === pr.id) return { text: '🔄 Bakıcıya aktarma', error: 'Bakıcı, yumurtanın kendi çifti olamaz' }
-      if (!latestOpenClutch(a.pairId, (c) => !c.hatchDate)) return { text: `🔄 ${pairText(pr)}`, error: 'Bu çiftin açık kuluçkası yok' }
-      return { text: `🔄 ${pairText(pr)} yumurtaları (${a.eggs || 'hepsi'}) → bakıcı ${pairText(fp)}, ${d}` }
+      if (!pr || !fp) return { text: 'Bakıcıya aktarma', error: 'Çift veya bakıcı bulunamadı' }
+      if (fp.id === pr.id) return { text: 'Bakıcıya aktarma', error: 'Bakıcı, yumurtanın kendi çifti olamaz' }
+      if (!latestOpenClutch(a.pairId, (c) => !c.hatchDate)) return { text: `${pairText(pr)}`, error: 'Bu çiftin açık kuluçkası yok' }
+      return { text: `${pairText(pr)} yumurtaları (${a.eggs || 'hepsi'}) → bakıcı ${pairText(fp)}, ${d}` }
     }
     case 'health': {
       const who = a.scope === 'some' && a.pigeonIds?.length ? a.pigeonIds.map(ring).join(', ') : 'Tüm sürü'
       return a.medicine || a.diagnosis
-        ? { text: `💊 ${a.medicine || a.diagnosis}${a.dose ? ` (${a.dose})` : ''} — ${who}, ${d}${a.nextDate ? `, tekrar ${fmtDate(a.nextDate)}` : ''}` }
-        : { text: '💊 Sağlık kaydı', error: 'İlaç adı yok' }
+        ? { text: `${a.medicine || a.diagnosis}${a.dose ? ` (${a.dose})` : ''} — ${who}, ${d}${a.nextDate ? `, tekrar ${fmtDate(a.nextDate)}` : ''}` }
+        : { text: 'Sağlık kaydı', error: 'İlaç adı yok' }
     }
     case 'feeding':
-      return num(a.amountGram) ? { text: `🌾 ${a.feed || get('rations', a.rationId)?.name || 'Yem'} ${a.amountGram} g, ${d}` } : { text: '🌾 Yemleme', error: 'Miktar yok' }
+      return num(a.amountGram) ? { text: `${a.feed || get('rations', a.rationId)?.name || 'Yem'} ${a.amountGram} g, ${d}` } : { text: 'Yemleme', error: 'Miktar yok' }
     case 'weight':
-      return a.pigeonId && get('pigeons', a.pigeonId) && num(a.gram) ? { text: `⚖️ ${pigeonLabel(get('pigeons', a.pigeonId))} — ${a.gram} g, ${d}` } : { text: '⚖️ Tartı', error: 'Kuş veya ağırlık bulunamadı' }
+      return a.pigeonId && get('pigeons', a.pigeonId) && num(a.gram) ? { text: `${pigeonLabel(get('pigeons', a.pigeonId))} — ${a.gram} g, ${d}` } : { text: 'Tartı', error: 'Kuş veya ağırlık bulunamadı' }
     case 'flight': {
       const ids = (a.pigeonIds || []).filter((id) => get('pigeons', id))
-      return ids.length ? { text: `🕊️ Uçuş: ${ids.map(ring).join(', ')}${a.durationMin ? ` — ${a.durationMin} dk` : ''}${a.score ? `, puan ${a.score}` : ''}, ${d}` } : { text: '🕊️ Uçuş', error: 'Kuş bulunamadı' }
+      return ids.length ? { text: `Uçuş: ${ids.map(ring).join(', ')}${a.durationMin ? ` — ${a.durationMin} dk` : ''}${a.score ? `, puan ${a.score}` : ''}, ${d}` } : { text: 'Uçuş', error: 'Kuş bulunamadı' }
     }
     case 'status':
       return a.pigeonId && get('pigeons', a.pigeonId) && STATUS[a.status]
-        ? { text: `🔁 ${pigeonLabel(get('pigeons', a.pigeonId))} → ${STATUS[a.status]}${a.toName ? ` (${a.toName}${a.toPrice ? `, ${a.toPrice} ₺` : ''})` : ''}` }
-        : { text: '🔁 Durum değişikliği', error: 'Kuş bulunamadı' }
+        ? { text: `${pigeonLabel(get('pigeons', a.pigeonId))} → ${STATUS[a.status]}${a.toName ? ` (${a.toName}${a.toPrice ? `, ${a.toPrice} ₺` : ''})` : ''}` }
+        : { text: 'Durum değişikliği', error: 'Kuş bulunamadı' }
     case 'stock_buy': {
       const s = get('stock', a.stockItemId)
-      return s && num(a.qty) ? { text: `📦 ${s.name} alımı ${a.qty} ${s.unit}${a.cost ? `, ${a.cost} ₺` : ''}` } : { text: '📦 Stok alımı', error: 'Stok kalemi veya miktar yok' }
+      return s && num(a.qty) ? { text: `${s.name} alımı ${a.qty} ${s.unit}${a.cost ? `, ${a.cost} ₺` : ''}` } : { text: 'Stok alımı', error: 'Stok kalemi veya miktar yok' }
     }
     case 'expense':
     case 'income':
-      return num(a.amount) ? { text: `${a.type === 'income' ? '➕ Gelir' : '➖ Gider'}: ${a.amount} ₺ ${a.category || ''} ${a.note || ''}` } : { text: 'Gelir/gider', error: 'Tutar yok' }
+      return num(a.amount) ? { text: `${a.type === 'income' ? 'Gelir' : 'Gider'}: ${a.amount} ₺ ${a.category || ''} ${a.note || ''}` } : { text: 'Gelir/gider', error: 'Tutar yok' }
     case 'note':
-      return a.text ? { text: `📝 Not: ${a.text}` } : { text: '📝 Not', error: 'Boş' }
+      return a.text ? { text: `Not: ${a.text}` } : { text: 'Not', error: 'Boş' }
     default:
       return { text: a.summary || a.type, error: 'Bilinmeyen işlem' }
   }

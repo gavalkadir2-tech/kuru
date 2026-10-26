@@ -1,4 +1,4 @@
-import { ClipboardList, Egg, Palette, Repeat } from 'lucide-react'
+import { Check, ClipboardList, Egg, Palette, Repeat, TriangleAlert, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { STATUS } from '../lib/constants'
 import { getTimings, useList } from '../lib/config'
@@ -6,7 +6,7 @@ import { addDays, daysBetween, exportCSV, fmtDate, money, pigeonLabel, today } f
 import { flightStats } from '../lib/performance'
 import { coiLabel, kinship, kinshipCoef, suggestMates } from '../lib/pedigree'
 import { get, list, remove, save, useCollection } from '../lib/store'
-import { Badge, confirmDel, Empty, ErrorText, Field, Modal, PageTitle, PigeonSelect, SearchBox, Select, Stat, Tabs } from '../components/ui'
+import { Badge, confirmDel, Empty, ErrorText, Field, Mars, Modal, PageTitle, PigeonSelect, SearchBox, Select, Stat, Tabs, Venus } from '../components/ui'
 import { predict } from '../lib/genetics'
 import { PigeonForm } from './Pigeons'
 import ColorGenetics from './ColorGenetics'
@@ -82,8 +82,12 @@ function ColorPreview({ maleId, femaleId }) {
   return (
     <div className="alert info full small">
       <strong>Beklenen yavru renkleri</strong>
-      <div>♂ {top('E')}</div>
-      <div>♀ {top('D')}</div>
+      <div className="inline-icon">
+        <Mars size={14} /> {top('E')}
+      </div>
+      <div className="inline-icon">
+        <Venus size={14} /> {top('D')}
+      </div>
     </div>
   )
 }
@@ -152,7 +156,11 @@ function PairForm({ initial, onClose }) {
             </div>
           ) : null
         })}
-        {kin && <div className={'alert full ' + (kin.type === 'direct' || kin.closest <= 1 ? 'error' : 'warn')}>⚠️ {kin.text}</div>}
+        {kin && (
+          <div className={'alert full ' + (kin.type === 'direct' || kin.closest <= 1 ? 'error' : 'warn') + ' inline-icon'}>
+            <TriangleAlert size={16} /> {kin.text}
+          </div>
+        )}
         {coi && (
           <div className={'alert full ' + (coi.tone === 'danger' ? 'error' : coi.tone === 'ok' ? 'info' : coi.tone)}>
             Yavrunun akrabalık katsayısı: <strong>{coi.text}</strong>
@@ -541,7 +549,7 @@ function MateSuggest({ onPair }) {
                       {paired.has(p.id) && <span className="tiny muted"> · eşli</span>}
                     </td>
                     <td>
-                      {p.breed || '—'} {sameBreed && '✓'}
+                      {p.breed || '—'} {sameBreed && <Check size={14} className="ok-text" aria-label="Aynı ırk" />}
                     </td>
                     <td>{p.color || '—'}</td>
                     <td>
@@ -667,7 +675,7 @@ export default function Breeding({ go }) {
             <input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} /> Tamamlananları göster
           </label>
           {visibleClutches.length === 0 ? (
-            <Empty icon="🥚" title="Aktif kuluçka yok">
+            <Empty icon={Egg} title="Aktif kuluçka yok">
               Çift oluşturup yumurtlama kaydı ekleyin; çıkış, halkalama ve ayırma tarihleri otomatik hesaplanır.
             </Empty>
           ) : (
@@ -754,7 +762,7 @@ export default function Breeding({ go }) {
       )}
       {tab === 'ciftler' &&
         (shownPairs.length === 0 ? (
-          <Empty icon="💞" title={pairs.length ? 'Filtreye uyan çift yok' : 'Henüz çift yok'} />
+          <Empty icon={Users} title={pairs.length ? 'Filtreye uyan çift yok' : 'Henüz çift yok'} />
         ) : (
           <div className="card-list">
             {shownPairs.map((pr) => {
@@ -772,7 +780,7 @@ export default function Breeding({ go }) {
                     </span>
                   </div>
                   <div className="small muted">
-                    ♂ {pigeonLabel(get('pigeons', pr.maleId))} · ♀ {pigeonLabel(get('pigeons', pr.femaleId))}
+                    Erkek: {pigeonLabel(get('pigeons', pr.maleId))} · Dişi: {pigeonLabel(get('pigeons', pr.femaleId))}
                   </div>
                   <div className="small">
                     {[pr.type, pr.season && `${pr.season} sezonu`, pr.targetColor && `hedef: ${pr.targetColor}`].filter(Boolean).join(' · ')}
@@ -789,7 +797,11 @@ export default function Breeding({ go }) {
                   <div className="small">
                     Yavru akrabalığı: <Badge tone={coi.tone}>{coi.text.split(' — ')[0]}</Badge>
                   </div>
-                  {kin && <div className="small warn-text">⚠️ {kin.text}</div>}
+                  {kin && (
+                    <div className="small warn-text inline-icon">
+                      <TriangleAlert size={14} /> {kin.text}
+                    </div>
+                  )}
                   <div className="row gap-s">
                     <button className="btn small primary" onClick={() => setReport(pr)}>
                       <ClipboardList size={14} /> Karne

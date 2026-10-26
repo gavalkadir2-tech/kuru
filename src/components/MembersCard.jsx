@@ -1,3 +1,4 @@
+import { Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { addMember, listMembers, removeMember, useIsHelper } from '../lib/members'
 import { useSyncState } from '../lib/store'
@@ -20,7 +21,9 @@ export default function MembersCard() {
   if (helper)
     return (
       <div className="card">
-        <h3>👥 Yardımcı hesabı</h3>
+        <h3>
+          <Users size={18} /> Yardımcı hesabı
+        </h3>
         <p className="small">Bu hesap başka bir güvercinliğin yardımcısıdır. Kayıt ekleyip düzenleyebilirsiniz; silme, satış fiyatları ve gelir-gider sayfaları kapalıdır.</p>
       </div>
     )
@@ -42,7 +45,9 @@ export default function MembersCard() {
 
   return (
     <div className="card">
-      <h3>👥 Yardımcılar</h3>
+      <h3>
+        <Users size={18} /> Yardımcılar
+      </h3>
       <p className="small muted">
         Kümese bakan birine sınırlı erişim verin. Yardımcı, eklediğiniz e-postayla hesap açıp giriş yapınca güvercinliğinizi görür ve kayıt girebilir; kayıt silemez,
         satış fiyatlarını, kişileri ve gelir-gideri göremez.

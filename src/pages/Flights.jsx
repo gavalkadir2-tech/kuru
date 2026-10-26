@@ -1,4 +1,4 @@
-import { Trophy } from 'lucide-react'
+import { Medal, Pencil, Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { exportCSV, fmtDate, num, pigeonLabel, today } from '../lib/format'
 import { flightStats, fmtDuration, lineStats } from '../lib/performance'
@@ -130,14 +130,14 @@ export function PigeonFlights({ pigeonId }) {
                 <div className="small muted">{[f.weather, f.plays && `${f.plays} oyun`, f.pigeonIds.length > 1 && `${f.pigeonIds.length} kuşla`].filter(Boolean).join(' · ')}</div>
                 {f.notes && <div className="small">{f.notes}</div>}
               </div>
-              <button className="btn tiny" onClick={() => setEdit(f)}>
-                ✎
+              <button aria-label="Düzenle" className="btn tiny" onClick={() => setEdit(f)}>
+                <Pencil size={14} />
               </button>
             </div>
           ))}
         </div>
       ) : (
-        <Empty icon="🕊️" title="Uçuş kaydı yok" />
+        <Empty icon={Trophy} title="Uçuş kaydı yok" />
       )}
       {edit && <FlightForm initial={edit} onClose={() => setEdit(null)} />}
     </>
@@ -189,7 +189,7 @@ export default function Flights({ go }) {
 
       {tab === 'kayit' &&
         (rows.length === 0 ? (
-          <Empty icon="🕊️" title="Uçuş kaydı yok">
+          <Empty icon={Trophy} title="Uçuş kaydı yok">
             Taklacı, dolapçı veya posta kuşlarınızın uçuş süresini ve oyun puanını kaydedin; en iyi kuşlar ve hatlar ortaya çıkar.
           </Empty>
         ) : (
@@ -219,7 +219,7 @@ export default function Flights({ go }) {
 
       {tab === 'sira' &&
         (ranking.length === 0 ? (
-          <Empty icon="🏆" title="Sıralama için uçuş kaydı gerekli" />
+          <Empty icon={Medal} title="Sıralama için uçuş kaydı gerekli" />
         ) : (
           <div className="card table-wrap">
             <table className="table">
@@ -236,7 +236,15 @@ export default function Flights({ go }) {
               <tbody>
                 {ranking.map((r, i) => (
                   <tr key={r.id} className="link-tr" onClick={() => go(`kus/${r.id}`)}>
-                    <td>{i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</td>
+                    <td>
+                      {i < 3 ? (
+                        <span className={`medal m${i + 1}`} aria-label={`${i + 1}.`}>
+                          <Medal size={18} />
+                        </span>
+                      ) : (
+                        i + 1
+                      )}
+                    </td>
                     <td>{pigeonLabel(r.p)}</td>
                     <td>{r.count}</td>
                     <td>{r.avgScore != null ? r.avgScore.toFixed(1) : '—'}</td>

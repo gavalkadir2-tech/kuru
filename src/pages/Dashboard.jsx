@@ -73,7 +73,7 @@ export default function Dashboard({ go }) {
       </div>
 
       <div className="stats">
- <Stat icon={Bird} label="Aktif güvercin" value={active.length} sub={`♂ ${active.filter((p) => p.sex === 'E').length} · ♀ ${active.filter((p) => p.sex === 'D').length}`} onClick={() => go('kuslar')} />
+ <Stat icon={Bird} label="Aktif güvercin" value={active.length} sub={`${active.filter((p) => p.sex === 'E').length} erkek · ${active.filter((p) => p.sex === 'D').length} dişi`} onClick={() => go('kuslar')} />
         <Stat icon={Egg} label="Aktif çift" value={pairs.filter((p) => p.active !== false).length} onClick={() => go('uretim')} />
         <Stat icon={CalendarClock} label="Kuluçka / yavrulu" value={activeClutches.length} onClick={() => go('uretim')} />
         <Stat icon={Sparkles} label={`${year} üretim`} value={born.length} sub="yavru" onClick={() => go('kuslar')} />

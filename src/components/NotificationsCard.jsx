@@ -1,3 +1,4 @@
+import { Bell } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { currentSubscription, disablePush, enablePush, generateVapidKeys, needsInstallForPush, pushConfigured, pushSupported, sendTestPush } from '../lib/push'
 import { getSettings, saveSettings, useSyncState } from '../lib/store'
@@ -31,7 +32,9 @@ export default function NotificationsCard() {
 
   return (
     <div className="card">
-      <h3>🔔 Bildirimler</h3>
+      <h3>
+        <Bell size={18} /> Bildirimler
+      </h3>
       <p className="small muted">
         Her gün seçtiğiniz saatte o günün işleri (çıkış, ışık kontrolü, halkalama, yavru ayırma, ilaç tekrarı) telefonunuza bildirim olarak gelir. Uygulama kapalıyken de çalışır.
       </p>

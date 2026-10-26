@@ -1,7 +1,8 @@
+import { Check } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { FEMALE_BASE, FEMALE_DILUTE, MALE_BASE, MALE_DILUTE, PATTERN, RECRED, SPREAD, predict } from '../lib/genetics'
 import { get, save, useCollection } from '../lib/store'
-import { Field, PigeonSelect } from '../components/ui'
+import { Field, Mars, PigeonSelect, Venus } from '../components/ui'
 
 const DEFAULT_M = { base: '+/+', dilute: 'D/D', pattern: '+/+', spread: '+/+', recred: '+/+' }
 const DEFAULT_F = { base: '+', dilute: 'D', pattern: '+/+', spread: '+/+', recred: '+/+' }
@@ -20,13 +21,15 @@ function Opt({ label, value, onChange, options }) {
   )
 }
 
-function ParentCard({ title, sex, bird, setBird, g, setG }) {
+function ParentCard({ title, icon: Icon, sex, bird, setBird, g, setG }) {
   const male = sex === 'E'
   const set = (k) => (v) => setG({ ...g, [k]: v })
   const [saved, setSaved] = useState(false)
   return (
     <div className="card">
-      <h3>{title}</h3>
+      <h3>
+        <Icon size={18} /> {title}
+      </h3>
       <Field label="Kayıtlı kuş (isteğe bağlı)">
         <PigeonSelect
           value={bird}
@@ -56,7 +59,13 @@ function ParentCard({ title, sex, bird, setBird, g, setG }) {
             setSaved(true)
           }}
         >
-          {saved ? '✓ Kuşa kaydedildi' : 'Bu genotipi kuşa kaydet'}
+          {saved ? (
+            <>
+              <Check size={14} /> Kuşa kaydedildi
+            </>
+          ) : (
+            'Bu genotipi kuşa kaydet'
+          )}
         </button>
       )}
     </div>
@@ -89,8 +98,8 @@ export default function ColorGenetics({ initialMale = '', initialFemale = '' }) 
         ne görünüyorsa odur.
       </p>
       <div className="grid-2">
-        <ParentCard title="♂ Baba" sex="E" bird={maleId} setBird={setMaleId} g={m} setG={setM} />
-        <ParentCard title="♀ Anne" sex="D" bird={femaleId} setBird={setFemaleId} g={f} setG={setF} />
+        <ParentCard title="Baba" icon={Mars} sex="E" bird={maleId} setBird={setMaleId} g={m} setG={setM} />
+        <ParentCard title="Anne" icon={Venus} sex="D" bird={femaleId} setBird={setFemaleId} g={f} setG={setF} />
       </div>
       <div className="card">
         <div className="row between wrap gap-s">
@@ -101,11 +110,13 @@ export default function ColorGenetics({ initialMale = '', initialFemale = '' }) 
         </div>
         <div className="grid-2">
           {[
-            ['E', '♂ Erkek yavrular'],
-            ['D', '♀ Dişi yavrular'],
-          ].map(([sex, title]) => (
+            ['E', 'Erkek yavrular', Mars],
+            ['D', 'Dişi yavrular', Venus],
+          ].map(([sex, title, SIcon]) => (
             <div key={sex}>
-              <h4 className="gen-title">{title}</h4>
+              <h4 className="gen-title inline-icon">
+                <SIcon size={15} /> {title}
+              </h4>
               {merged(sex).map((r) => (
                 <div key={r.name + r.carriers.join()} className="gen-row">
                   <div className="row between gap-s">

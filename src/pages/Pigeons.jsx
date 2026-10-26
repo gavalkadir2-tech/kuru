@@ -4,7 +4,7 @@ import { ORIGIN, SEX, STATUS } from '../lib/constants'
 import { useList } from '../lib/config'
 import { ageText, exportCSV, fmtDate, money, num, pigeonLabel, today } from '../lib/format'
 import { get, list, save, useCollection, useSettings } from '../lib/store'
-import { Badge, Empty, ErrorText, Field, Modal, PageTitle, persistPhotos, PhotosEditor, PigeonSelect, SearchBox, Select } from '../components/ui'
+import { Badge, Empty, ErrorText, Field, Modal, PageTitle, persistPhotos, PhotosEditor, PigeonSelect, SearchBox, Select, SexIcon } from '../components/ui'
 import { PhotoImg } from '../lib/photos'
 import { afterPigeonSave, findPerson } from '../lib/people'
 import { useIsHelper } from '../lib/members'
@@ -499,7 +499,11 @@ export default function Pigeons({ go }) {
           {filtered.map((p) => (
             <button key={p.id} className={'pigeon-card' + (sel.includes(p.id) ? ' selected' : '')} onClick={() => (selecting ? toggle(p.id) : go(`kus/${p.id}`))}>
               {selecting && <input type="checkbox" readOnly checked={sel.includes(p.id)} tabIndex={-1} />}
-              <PhotoImg id={p.photos?.[0]?.id} className="thumb" fallback={<div className="avatar">{p.sex === 'D' ? '♀' : p.sex === 'E' ? '♂' : '🕊️'}</div>} />
+              <PhotoImg id={p.photos?.[0]?.id} className="thumb" fallback={
+                  <div className="avatar">
+                    <SexIcon sex={p.sex} />
+                  </div>
+                } />
               <div className="pc-body">
                 <div className="pc-title">
                   <strong>{p.ring}</strong> {p.name && <span>· {p.name}</span>}

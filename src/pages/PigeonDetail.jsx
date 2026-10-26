@@ -1,10 +1,10 @@
-import { ScrollText, Tag } from 'lucide-react'
+import { ChevronLeft, Egg, HeartPulse, ScrollText, Tag, Users } from 'lucide-react'
 import { useState } from 'react'
 import { HEALTH_TYPES, ORIGIN, SEX, STATUS } from '../lib/constants'
 import { ageText, fmtDate, money, pigeonLabel } from '../lib/format'
 import { coiLabel, inbreedingOf, offspring } from '../lib/pedigree'
 import { get, remove, useCollection, useRecord } from '../lib/store'
-import { Badge, Empty, Gallery, Tabs, confirmDel } from '../components/ui'
+import { Badge, confirmDel, Empty, Gallery, SexIcon, Tabs } from '../components/ui'
 import { PhotoImg, deletePhoto } from '../lib/photos'
 import { PigeonForm, STATUS_TONE, pairText, parentLabel } from './Pigeons'
 import { HealthForm } from './Health'
@@ -84,7 +84,7 @@ export default function PigeonDetail({ id, go }) {
     <div className="page">
       <div className="page-head">
         <button className="btn ghost small" onClick={() => go('kuslar')}>
-          ← Geri
+          <ChevronLeft size={16} /> Geri
         </button>
         <div className="row gap-s no-print">
           <button className="btn small" onClick={() => go(`belge/${p.id}`)}>
@@ -103,7 +103,11 @@ export default function PigeonDetail({ id, go }) {
       </div>
 
       <div className="detail-head card">
-        <PhotoImg id={p.photos?.[0]?.id} className="detail-photo" fallback={<div className="avatar big">{p.sex === 'D' ? '♀' : p.sex === 'E' ? '♂' : '🕊️'}</div>} />
+        <PhotoImg id={p.photos?.[0]?.id} className="detail-photo" fallback={
+            <div className="avatar big">
+              <SexIcon sex={p.sex} size={40} />
+            </div>
+          } />
         <div>
           <h1>{p.ring}</h1>
           {p.name && <p className="lead">{p.name}</p>}
@@ -207,7 +211,9 @@ export default function PigeonDetail({ id, go }) {
           <div className="card-list">
             {kids.map((k) => (
               <button key={k.id} className="pigeon-card" onClick={() => go(`kus/${k.id}`)}>
-                <div className="avatar">{k.sex === 'D' ? '♀' : k.sex === 'E' ? '♂' : '🕊️'}</div>
+                <div className="avatar">
+                  <SexIcon sex={k.sex} />
+                </div>
                 <div className="pc-body">
                   <strong>{pigeonLabel(k)}</strong>
                   <div className="pc-meta">
@@ -246,7 +252,7 @@ export default function PigeonDetail({ id, go }) {
                 ))}
             </div>
           ) : (
-            <Empty icon="💊" title="Sağlık kaydı yok" />
+            <Empty icon={HeartPulse} title="Sağlık kaydı yok" />
           )}
         </>
       )}
@@ -260,7 +266,9 @@ export default function PigeonDetail({ id, go }) {
               const hatched = cl.reduce((s, c) => s + (+c.hatched || 0), 0)
               return (
                 <button key={pr.id} className="pigeon-card" onClick={() => go('uretim')}>
-                  <div className="avatar">💞</div>
+                  <div className="avatar">
+                    <Users size={22} />
+                  </div>
                   <div className="pc-body">
                     <strong>Eşi: {pigeonLabel(mate)}</strong>
                     <div className="pc-meta">
@@ -273,7 +281,7 @@ export default function PigeonDetail({ id, go }) {
             })}
           </div>
         ) : (
-          <Empty icon="🥚" title="Eşleştirme kaydı yok" />
+          <Empty icon={Egg} title="Eşleştirme kaydı yok" />
         ))}
 
       {tab === 'ucus' && <PigeonFlights pigeonId={p.id} />}

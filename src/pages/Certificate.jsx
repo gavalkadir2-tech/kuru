@@ -1,3 +1,4 @@
+import { ChevronLeft } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useState } from 'react'
 import { SEX } from '../lib/constants'
@@ -139,7 +140,7 @@ export default function Certificate({ id, go }) {
     <div className="page">
       <div className="page-head no-print">
         <button className="btn ghost small" onClick={() => go(`kus/${p.id}`)}>
-          ← Geri
+          <ChevronLeft size={16} /> Geri
         </button>
         <div className="row gap-s wrap">
           <button className="btn small" onClick={share} disabled={!url}>
@@ -170,7 +171,7 @@ export function SharedPedigree({ code }) {
   }, [code])
   const qr = useQr(location.href)
   if (err) return <div className="shared"><Empty title={err} /></div>
-  if (!data) return <div className="splash">🕊️</div>
+  if (!data) return <div className="splash"><img src="/icon.svg" alt="" /></div>
   return (
     <div className="shared">
       <div className="row between no-print">

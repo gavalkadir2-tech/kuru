@@ -1,4 +1,4 @@
-import { ArrowLeftRight } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Handshake } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ORIGIN, STATUS } from '../lib/constants'
 import { exportCSV, fmtDate, money, today } from '../lib/format'
@@ -89,14 +89,14 @@ export default function Trade({ go }) {
         </div>
       )}
       {rows.length === 0 ? (
-        <Empty icon="🤝" title="Kayıt yok">
+        <Empty icon={Handshake} title="Kayıt yok">
           Güvercin kartında "Durum" alanını "Satıldı" yaparak veya köken bilgisini girerek kayıt oluşturun.
         </Empty>
       ) : (
         <div className="card-list">
           {rows.map((p) => (
             <button key={p.id} className="pigeon-card" onClick={() => go(`kus/${p.id}`)}>
-              <div className="avatar">{tab === 'satis' ? '↗' : '↙'}</div>
+              <div className="avatar">{tab === 'satis' ? <ArrowUpRight size={22} /> : <ArrowDownLeft size={22} />}</div>
               <div className="pc-body">
                 <strong>
                   {p.ring} {p.name && `· ${p.name}`}

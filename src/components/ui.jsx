@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { Bird, Camera, Loader, Search, Star, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { compressImage, markdown, pigeonLabel } from '../lib/format'
 import { isHelper, useCollection } from '../lib/store'
@@ -20,7 +20,7 @@ export function Modal({ title, onClose, children, footer, wide }) {
         <div className="modal-head">
           <h2>{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Kapat">
-            ✕
+            <X size={20} />
           </button>
         </div>
         <div className="modal-body">{children}</div>
@@ -72,10 +72,38 @@ export function PigeonSelect({ value, onChange, sex, exclude, placeholder = 'Ku�
   )
 }
 
-export function Empty({ icon = '🕊️', title, children }) {
+// Erkek / dişi simgeleri (lucide çizgi stilinde SVG)
+const svgProps = (size) => ({ width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' })
+export function Mars({ size = 20, ...rest }) {
+  return (
+    <svg {...svgProps(size)} {...rest}>
+      <circle cx="10" cy="14" r="6" />
+      <path d="M14.5 9.5 21 3M15 3h6v6" />
+    </svg>
+  )
+}
+export function Venus({ size = 20, ...rest }) {
+  return (
+    <svg {...svgProps(size)} {...rest}>
+      <circle cx="12" cy="9" r="6" />
+      <path d="M12 15v7M9 19h6" />
+    </svg>
+  )
+}
+
+// Cinsiyete göre küçük simge (erkek / dişi / belirsiz)
+export function SexIcon({ sex, size = 20 }) {
+  if (sex === 'E') return <Mars size={size} aria-label="Erkek" />
+  if (sex === 'D') return <Venus size={size} aria-label="Dişi" />
+  return <Bird size={size} aria-label="Cinsiyet belirsiz" />
+}
+
+export function Empty({ icon: Icon = Bird, title, children }) {
   return (
     <div className="empty">
-      <div className="empty-icon">{icon}</div>
+      <div className="empty-icon">
+        <Icon size={32} strokeWidth={1.6} />
+      </div>
       <strong>{title}</strong>
       {children && <p>{children}</p>}
     </div>
@@ -122,7 +150,7 @@ export function PhotoInput({ value, onChange, label = 'Fotoğraf' }) {
         <img src={value} alt="" />
       ) : (
         <div className="photo-ph" onClick={() => ref.current.click()}>
-          📷
+          <Camera size={26} />
         </div>
       )}
       <div className="row gap-s">
@@ -203,7 +231,14 @@ export function PhotosEditor({ value, onChange }) {
       <div className="photo-strip">
         {value.map((ph, i) => (
           <div key={ph.id || i} className="photo-tile">
-            {ph.dataUrl ? <img src={ph.dataUrl} alt="" /> : <PhotoImg id={ph.id} fallback={<div className="photo-ph">⏳</div>} />}
+            {ph.dataUrl ? <img src={ph.dataUrl} alt="" /> : <PhotoImg
+                id={ph.id}
+                fallback={
+                  <div className="photo-ph">
+                    <Loader size={20} />
+                  </div>
+                }
+              />}
             <select value={ph.label} onChange={(e) => update(i, { label: e.target.value })}>
               {PHOTO_LABELS.map((l) => (
                 <option key={l}>{l}</option>
@@ -211,18 +246,19 @@ export function PhotosEditor({ value, onChange }) {
             </select>
             <div className="row gap-s">
               {i > 0 && (
-                <button type="button" className="btn tiny ghost" onClick={() => makeMain(i)} title="Ana fotoğraf yap">
-                  ★
+                <button type="button" className="btn tiny ghost" onClick={() => makeMain(i)} title="Ana fotoğraf yap" aria-label="Ana fotoğraf yap">
+                  <Star size={14} />
                 </button>
               )}
-              <button type="button" className="btn tiny ghost danger-text" onClick={() => removeAt(i)} title="Kaldır">
-                ✕
+              <button type="button" className="btn tiny ghost danger-text" onClick={() => removeAt(i)} title="Kaldır" aria-label="Kaldır">
+                <X size={14} />
               </button>
             </div>
           </div>
         ))}
         <button type="button" className="photo-ph add" onClick={() => ref.current.click()}>
-          📷<span>Ekle</span>
+          <Camera size={24} />
+          <span>Ekle</span>
         </button>
       </div>
       {err && <span className="error-text">{err}</span>}
@@ -251,7 +287,14 @@ export function Gallery({ photos }) {
       <div className="photo-strip">
         {photos.map((ph, i) => (
           <button key={ph.id} className="photo-tile view" onClick={() => setOpen(i)}>
-            <PhotoImg id={ph.id} fallback={<div className="photo-ph">⏳</div>} />
+            <PhotoImg
+                id={ph.id}
+                fallback={
+                  <div className="photo-ph">
+                    <Loader size={20} />
+                  </div>
+                }
+              />
             <span className="tiny muted">{ph.label}</span>
           </button>
         ))}

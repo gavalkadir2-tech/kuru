@@ -1,4 +1,4 @@
-import { Wallet } from 'lucide-react'
+import { ExternalLink, Pencil, Wallet, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { exportCSV, fmtDate, money, num, pigeonLabel, today } from '../lib/format'
 import { get, remove, save, useCollection } from '../lib/store'
@@ -213,14 +213,14 @@ export default function Ledger({ go }) {
             </table>
           </div>
         ) : (
-          <Empty icon="📒" title="Bu dönemde kayıt yok" />
+          <Empty icon={Wallet} title="Bu dönemde kayıt yok" />
         ))}
 
       {tab === 'liste' && (
         <>
           <Select value={type} onChange={setType} options={{ gelir: 'Gelirler', gider: 'Giderler' }} placeholder="Gelir ve gider" />
           {rows.length === 0 ? (
-            <Empty icon="📒" title="Kayıt yok">
+            <Empty icon={Wallet} title="Kayıt yok">
               Kuş satış/alış fiyatları, stok alımları, sağlık ve yemleme maliyetleri buraya otomatik gelir. Diğer gelir-giderleri "+ Kayıt" ile ekleyin.
             </Empty>
           ) : (
@@ -249,16 +249,16 @@ export default function Ledger({ go }) {
                       <td className="nowrap">
                         {e.manual ? (
                           <>
-                            <button className="btn tiny" onClick={() => setEdit(e)}>
-                              ✎
+                            <button aria-label="Düzenle" className="btn tiny" onClick={() => setEdit(e)}>
+                              <Pencil size={14} />
                             </button>
-                            <button className="btn tiny ghost danger-text" onClick={() => confirmDel(`${e.category} ${money(e.amount)}`) && remove('ledger', e.id)}>
-                              ✕
+                            <button aria-label="Sil" className="btn tiny ghost danger-text" onClick={() => confirmDel(`${e.category} ${money(e.amount)}`) && remove('ledger', e.id)}>
+                              <X size={14} />
                             </button>
                           </>
                         ) : (
-                          <button className="btn tiny ghost" title="Kaynağa git" onClick={() => go(e.link)}>
-                            ↗
+                          <button aria-label="Kaynağa git" className="btn tiny ghost" title="Kaynağa git" onClick={() => go(e.link)}>
+                            <ExternalLink size={14} />
                           </button>
                         )}
                       </td>
@@ -266,7 +266,9 @@ export default function Ledger({ go }) {
                   ))}
                 </tbody>
               </table>
-              <p className="tiny muted">↗ işaretli kayıtlar diğer sayfalardan otomatik gelir; değiştirmek için kaynağına gidin.</p>
+              <p className="tiny muted inline-icon">
+                <ExternalLink size={12} /> işaretli kayıtlar diğer sayfalardan otomatik gelir; değiştirmek için kaynağına gidin.
+              </p>
             </div>
           )}
         </>

@@ -3,7 +3,7 @@ import { parseSpeech, speechSupported, startListening } from '../lib/voice'
 import ActionCards from './ActionCards'
 import { cloudEnabled } from '../lib/supabase'
 import { ErrorText, Modal } from './ui'
-import { Mic } from 'lucide-react'
+import { Mic, Square } from 'lucide-react'
 
 const EXAMPLES = [
   '3 numaralı yuvada bugün ilk yumurta var',
@@ -55,17 +55,17 @@ export function VoiceModal({ onClose }) {
   }
 
   return (
-    <Modal title="🎤 Sesle kayıt" onClose={onClose}>
+    <Modal title="Sesle kayıt" onClose={onClose}>
       {!cloudEnabled && <div className="alert warn">Sesle kayıt yapay zeka kullandığı için bulut bağlantısı ve giriş gerektirir.</div>}
       <div className="voice">
         {speechSupported() ? (
           <button className={'mic' + (listening ? ' on' : '')} onClick={listen} aria-label={listening ? 'Dinlemeyi durdur' : 'Konuşmaya başla'}>
-            {listening ? '■' : '🎤'}
+            {listening ? <Square size={28} fill="currentColor" /> : <Mic size={34} />}
           </button>
         ) : (
           <p className="small muted">Bu tarayıcı sesi doğrudan tanımıyor; klavyedeki mikrofon tuşuyla yazdırabilirsiniz.</p>
         )}
-        <p className="small muted center">{listening ? 'Dinliyorum… bitince ■ düğmesine basın' : 'Mikrofona basıp söyleyin veya yazın'}</p>
+        <p className="small muted center">{listening ? 'Dinliyorum… bitince durdur düğmesine basın' : 'Mikrofona basıp söyleyin veya yazın'}</p>
         <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder={EXAMPLES[0]} />
         <button className="btn primary block" onClick={analyze} disabled={loading || !cloudEnabled}>
           {loading ? 'Anlaşılıyor…' : 'Kayıtlara dönüştür'}

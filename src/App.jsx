@@ -107,7 +107,7 @@ export default function App() {
   // Paylaşılan soy kütüğü bağlantısı giriş gerektirmez
   if (route.startsWith('soy/')) return <SharedPedigree code={route.slice(4)} />
 
-  if (supabase && session === undefined) return <div className="splash">🕊️</div>
+  if (supabase && session === undefined) return <div className="splash"><img src="/icon.svg" alt="Kuru" /></div>
   if (supabase && !session && !skipAuth)
     return (
       <Auth

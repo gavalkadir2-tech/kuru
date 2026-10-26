@@ -1,5 +1,22 @@
 import { useState } from 'react'
-import { Check } from 'lucide-react'
+import { ArrowLeftRight, Bird, Check, Egg, HeartPulse, Minus, NotebookPen, Package, Plus, Repeat, Scale, Trophy, Users, Wheat } from 'lucide-react'
+
+// İşlem türüne göre kart ikonu
+const ICONS = {
+  egg: Egg,
+  hatch: Bird,
+  foster: Repeat,
+  pair: Users,
+  health: HeartPulse,
+  feeding: Wheat,
+  weight: Scale,
+  flight: Trophy,
+  status: ArrowLeftRight,
+  stock_buy: Package,
+  income: Plus,
+  expense: Minus,
+  note: NotebookPen,
+}
 import { apply, describe } from '../lib/voice'
 
 // Yapay zekanın önerdiği kayıtlar: kullanıcı tek tek veya topluca onaylar
@@ -23,7 +40,13 @@ export default function ActionCards({ actions, title }) {
         const d = done[i] === 'ok' ? { text: describe(a).text } : describe(a)
         return (
           <div key={i} className={'card voice-action' + (d.error ? ' bad' : '')}>
-            <span>{d.text}</span>
+            <span className="action-title">
+              {(() => {
+                const Icon = ICONS[a.type] || NotebookPen
+                return <Icon size={16} className="event-icon" />
+              })()}
+              {d.text}
+            </span>
             {a.summary && a.summary !== d.text && <span className="tiny muted">{a.summary}</span>}
             {d.error && <span className="small danger-text">{d.error} — kaydedilemez</span>}
             {done[i] === 'ok' ? (

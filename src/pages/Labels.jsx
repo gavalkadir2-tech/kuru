@@ -1,3 +1,4 @@
+import { ChevronLeft } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useState } from 'react'
 import { SEX } from '../lib/constants'
@@ -45,7 +46,7 @@ export default function Labels({ ids, go }) {
     <div className="page">
       <div className="page-head no-print">
         <button className="btn ghost small" onClick={() => history.back()}>
-          ← Geri
+          <ChevronLeft size={16} /> Geri
         </button>
         <button className="btn primary small" onClick={() => window.print()}>
           Yazdır

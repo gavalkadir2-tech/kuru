@@ -1,4 +1,4 @@
-import { Package } from 'lucide-react'
+import { Package, TriangleAlert, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { exportCSV, fmtDate, money, num, today } from '../lib/format'
 import { MOVE_SOURCES, STOCK_CATEGORIES, STOCK_UNITS, fmtQty, stockLevels } from '../lib/stock'
@@ -169,7 +169,11 @@ export default function Stock() {
           </button>
         </div>
       </div>
-      {lowCount > 0 && <div className="alert warn">⚠️ {lowCount} kalem uyarı seviyesinin altında.</div>}
+      {lowCount > 0 && (
+        <div className="alert warn inline-icon">
+          <TriangleAlert size={16} /> {lowCount} kalem uyarı seviyesinin altında.
+        </div>
+      )}
       <Tabs value={tab} onChange={setTab} tabs={{ liste: 'Stok Durumu', hareket: 'Hareketler' }} />
 
       {tab === 'liste' && (
@@ -179,7 +183,7 @@ export default function Stock() {
             <Select value={cat} onChange={setCat} options={STOCK_CATEGORIES} placeholder="Tüm kategoriler" />
           </div>
           {rows.length === 0 ? (
-            <Empty icon="📦" title="Stok kalemi yok">
+            <Empty icon={Package} title="Stok kalemi yok">
               Yem, ilaç ve vitaminleri ekleyin; yemleme ve ilaç kayıtlarında seçtiğinizde stoktan otomatik düşer.
             </Empty>
           ) : (
@@ -231,7 +235,7 @@ export default function Stock() {
 
       {tab === 'hareket' &&
         (history.length === 0 ? (
-          <Empty icon="📦" title="Hareket yok" />
+          <Empty icon={Package} title="Hareket yok" />
         ) : (
           <div className="card table-wrap">
             <table className="table">
@@ -263,8 +267,8 @@ export default function Stock() {
                       <td>{m.cost ? money(m.cost) : '—'}</td>
                       <td>
                         {!m.refId && (
-                          <button className="btn tiny ghost danger-text" onClick={() => confirmDel('Stok hareketi') && remove('stockMoves', m.id)}>
-                            ✕
+                          <button aria-label="Sil" className="btn tiny ghost danger-text" onClick={() => confirmDel('Stok hareketi') && remove('stockMoves', m.id)}>
+                            <X size={14} />
                           </button>
                         )}
                       </td>

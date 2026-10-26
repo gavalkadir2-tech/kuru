@@ -1,4 +1,4 @@
-import { Users } from 'lucide-react'
+import { ChevronLeft, MessageCircle, Phone, Users, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { STATUS } from '../lib/constants'
 import { exportCSV, fmtDate, money, num, today } from '../lib/format'
@@ -131,7 +131,7 @@ export function PersonDetail({ id, go }) {
     <div className="page">
       <div className="page-head">
         <button className="btn ghost small" onClick={() => go('kisiler')}>
-          ← Kişiler
+          <ChevronLeft size={16} /> Kişiler
         </button>
         <div className="row gap-s">
           <button className="btn small" onClick={() => setEdit(true)}>
@@ -160,10 +160,10 @@ export function PersonDetail({ id, go }) {
         {person.phone && (
           <div className="row gap-s wrap">
             <a className="btn small" href={links.tel}>
-              📞 {person.phone}
+              <Phone size={15} /> {person.phone}
             </a>
             <a className="btn small" href={links.wa} target="_blank" rel="noreferrer">
-              💬 WhatsApp
+              <MessageCircle size={15} /> WhatsApp
             </a>
           </div>
         )}
@@ -192,8 +192,8 @@ export function PersonDetail({ id, go }) {
             <span className="row gap-s nowrap">
               <strong className={ACCOUNT_KINDS[m.kind]?.sign > 0 ? 'warn-text' : 'ok-text'}>{money(m.amount)}</strong>
               {!m.refId && (
-                <button className="btn tiny ghost danger-text" onClick={() => confirmDel('Cari hareket') && remove('accounts', m.id)}>
-                  ✕
+                <button aria-label="Sil" className="btn tiny ghost danger-text" onClick={() => confirmDel('Cari hareket') && remove('accounts', m.id)}>
+                  <X size={14} />
                 </button>
               )}
             </span>
@@ -277,7 +277,7 @@ export default function People({ go }) {
         <input type="checkbox" checked={onlyDebt} onChange={(e) => setOnlyDebt(e.target.checked)} /> Yalnızca borcu/alacağı olanlar
       </label>
       {rows.length === 0 ? (
-        <Empty icon="👥" title="Kişi yok">
+        <Empty icon={Users} title="Kişi yok">
           Kuş satarken veya alırken yazdığınız kişiler buraya otomatik eklenir.
         </Empty>
       ) : (

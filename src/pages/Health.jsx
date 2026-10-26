@@ -1,4 +1,4 @@
-import { HeartPulse } from 'lucide-react'
+import { HeartPulse, Sparkles } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { CARE_GUIDE, HEALTH_TYPES, MEDICINES, SEX, SYMPTOMS, URGENCY } from '../lib/constants'
 import { ageText, daysBetween, exportCSV, fmtDate, money, num, pigeonLabel, today } from '../lib/format'
@@ -226,7 +226,7 @@ function Records() {
       )}
 
       {rows.length === 0 ? (
-        <Empty icon="💊" title="Sağlık kaydı yok">
+        <Empty icon={HeartPulse} title="Sağlık kaydı yok">
           İlaçlama, aşı ve tedavileri kaydederek sağlık geçmişini takip edin.
         </Empty>
       ) : (
@@ -368,7 +368,9 @@ function Diagnose() {
 
       <div className="card ai-card">
         <div className="row between wrap gap-s">
-          <h3>🤖 Yapay zeka analizi</h3>
+          <h3>
+            <Sparkles size={18} /> Yapay zeka analizi
+          </h3>
           <button className="btn primary" onClick={runAI} disabled={loading || !cloudEnabled}>
             {loading ? 'Analiz ediliyor…' : 'Analiz et'}
           </button>
@@ -404,7 +406,9 @@ function CareGuide() {
   return (
     <>
       <div className="card ai-card">
-        <h3>🤖 Kişisel bakım planı</h3>
+        <h3>
+          <Sparkles size={18} /> Kişisel bakım planı
+        </h3>
         <div className="form-grid">
           <Field label="Dönem">
             <Select
