@@ -2,6 +2,7 @@ import { daysBetween, fmtDate, money, today } from '../lib/format'
 import { get, remove, useCollection, useSettings } from '../lib/store'
 import { Badge, Stat, confirmDel } from '../components/ui'
 import { fmtQty, stockLevels } from '../lib/stock'
+import { useIsHelper } from '../lib/members'
 import { clutchDates, clutchStatus, pairLabel } from './Breeding'
 
 export default function Dashboard({ go }) {
@@ -11,6 +12,7 @@ export default function Dashboard({ go }) {
   const clutches = useCollection('clutches')
   const health = useCollection('health')
   const notes = useCollection('notes')
+  const helper = useIsHelper()
   useCollection('stockMoves')
   useCollection('stock')
   const lowStock = stockLevels().filter((l) => l.low)
@@ -62,7 +64,7 @@ export default function Dashboard({ go }) {
         <Stat label="Aktif çift" value={pairs.filter((p) => p.active !== false).length} onClick={() => go('uretim')} />
         <Stat label="Kuluçka / yavrulu" value={activeClutches.length} onClick={() => go('uretim')} />
         <Stat label={`${year} üretim`} value={born.length} sub="yavru" onClick={() => go('kuslar')} />
-        <Stat label={`${year} satış`} value={sales.length} sub={money(sales.reduce((s, p) => s + (+p.toPrice || 0), 0))} onClick={() => go('alimsatim')} />
+        {!helper && <Stat label={`${year} satış`} value={sales.length} sub={money(sales.reduce((s, p) => s + (+p.toPrice || 0), 0))} onClick={() => go('alimsatim')} />}
         <Stat
           label="Son ilaçlama"
           value={daysSinceHealth == null ? '—' : `${daysSinceHealth} gün`}
@@ -136,9 +138,11 @@ export default function Dashboard({ go }) {
         <button className="quick-btn" onClick={() => go('asistan')}>
           🤖<span>AI asistan</span>
         </button>
-        <button className="quick-btn" onClick={() => go('alimsatim')}>
-          🤝<span>Alım-satım</span>
-        </button>
+        {!helper && (
+          <button className="quick-btn" onClick={() => go('alimsatim')}>
+            🤝<span>Alım-satım</span>
+          </button>
+        )}
       </div>
 
       {active.length === 0 && (

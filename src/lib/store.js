@@ -173,7 +173,7 @@ export function importBackup(json) {
 }
 
 // ---------- Bulut senkronu ----------
-const syncState = { status: 'idle', lastSync: readJSON(PULL_KEY, null), error: null, user: null, ownerId: null }
+const syncState = { status: 'idle', lastSync: null, error: null, user: null, ownerId: null, role: 'sahip' }
 const syncListeners = new Set()
 function setSync(patch) {
   Object.assign(syncState, patch)
@@ -191,9 +191,32 @@ export function useSyncState() {
   )
 }
 
-export function setSyncUser(user, ownerId) {
-  setSync({ user, ownerId: user ? ownerId || user.id : null })
+// role: 'sahip' (kendi güvercinliği) veya 'yardimci' (başkasının güvercinliğinde yardımcı)
+export function setSyncUser(user, ownerId, role = 'sahip') {
+  setSync({ user, ownerId: user ? ownerId || user.id : null, role: user ? role : 'sahip' })
   if (user) syncNow()
+}
+
+export function isHelper() {
+  return syncState.role === 'yardimci'
+}
+
+// Güvercinlik başına ayrı senkron sınırı (aynı cihazda farklı hesapla giriş yapılabilir)
+const pullKey = () => `${PULL_KEY}:${syncState.ownerId}`
+
+const isRlsError = (e) => e?.code === '42501' || /row-level security/i.test(e?.message || '')
+
+// Sunucunun reddettiği (ör. yardımcının silme denemesi) kayıtları sunucudaki haline döndürür
+async function revertRejected(rows) {
+  const ids = rows.map((r) => r.id)
+  const { data: server } = await supabase.from('kuru_records').select('id, collection, data, deleted').in('id', ids)
+  const byId = new Map((server || []).map((r) => [r.id, r]))
+  for (const r of rows) {
+    const srv = byId.get(r.id)
+    if (srv) data[r.collection][r.id] = { ...srv.data, deleted: srv.deleted }
+    else delete data[r.collection][r.id]
+    dirty.delete(`${r.collection}:${r.id}`)
+  }
 }
 
 // Bulutta kayıtların ait olduğu güvercinlik sahibinin kimliği
@@ -237,16 +260,32 @@ export async function syncNow() {
           }
         })
         .filter(Boolean)
+      const rejected = []
       for (let i = 0; i < rows.length; i += 200) {
-        const { error } = await supabase.from('kuru_records').upsert(rows.slice(i, i + 200))
-        if (error) throw error
+        const chunk = rows.slice(i, i + 200)
+        const { error } = await supabase.from('kuru_records').upsert(chunk)
+        if (!error) continue
+        if (!isRlsError(error)) throw error
+        // Yetki hatası: satırları tek tek dene, reddedilenleri ayıkla
+        for (const row of chunk) {
+          const { error: e1 } = await supabase.from('kuru_records').upsert(row)
+          if (e1) {
+            if (!isRlsError(e1)) throw e1
+            rejected.push(row)
+          }
+        }
       }
       keys.forEach((k) => dirty.delete(k))
+      if (rejected.length) {
+        await revertRejected(rejected)
+        emit()
+        setSync({ error: `${rejected.length} değişiklik yetki olmadığı için geri alındı.` })
+      }
       persist()
     }
 
     // 2) Sunucudaki yenilikleri çek
-    const since = readJSON(PULL_KEY, null)
+    const since = readJSON(pullKey(), null)
     let changed = false
     let maxSeen = since
     let from = 0
@@ -254,6 +293,7 @@ export async function syncNow() {
       let q = supabase
         .from('kuru_records')
         .select('id, collection, data, updated_at, deleted, server_updated_at')
+        .eq('owner_id', syncState.ownerId)
         .order('server_updated_at', { ascending: true })
         .range(from, from + 999)
       // gte: aynı anda yazılmış satırları kaçırmamak için sınırı dahil et (tekrar gelen satır zararsızdır)
@@ -276,7 +316,7 @@ export async function syncNow() {
       persist()
       emit()
     }
-    writeJSON(PULL_KEY, maxSeen)
+    writeJSON(pullKey(), maxSeen)
     setSync({ status: 'ok', lastSync: new Date().toISOString() })
   } catch (e) {
     console.error(e)

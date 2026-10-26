@@ -7,6 +7,7 @@ import { Badge, Empty, Gallery, Tabs, confirmDel } from '../components/ui'
 import { PhotoImg, deletePhoto } from '../lib/photos'
 import { PigeonForm, STATUS_TONE, parentLabel } from './Pigeons'
 import { HealthForm } from './Health'
+import { useIsHelper } from '../lib/members'
 import { PigeonFlights } from './Flights'
 import Growth from './Growth'
 
@@ -51,6 +52,7 @@ export default function PigeonDetail({ id, go }) {
   const pairs = useCollection('pairs')
   const clutches = useCollection('clutches')
   useCollection('pigeons')
+  const helper = useIsHelper()
   const [tab, setTab] = useState('soy')
   const [edit, setEdit] = useState(false)
   const [addHealth, setAddHealth] = useState(false)
@@ -141,14 +143,14 @@ export default function PigeonDetail({ id, go }) {
         {p.origin !== 'uretim' && (
           <div>
             <span>Geliş</span>
-            {fmtDate(p.fromDate)} {p.fromPrice !== '' && p.fromPrice != null && `· ${money(p.fromPrice)}`}
+            {fmtDate(p.fromDate)} {!helper && p.fromPrice !== '' && p.fromPrice != null && `· ${money(p.fromPrice)}`}
             {p.fromPhone && ` · ${p.fromPhone}`}
           </div>
         )}
         {['satildi', 'verildi'].includes(p.status) && (
           <div>
             <span>{p.status === 'satildi' ? 'Satıldı' : 'Verildi'}</span>
-            {p.toName} · {fmtDate(p.toDate)} {p.status === 'satildi' && `· ${money(p.toPrice)}`}
+            {p.toName} · {fmtDate(p.toDate)} {p.status === 'satildi' && !helper && `· ${money(p.toPrice)}`}
             {p.toPhone && ` · ${p.toPhone}`} {p.toCity && ` · ${p.toCity}`}
           </div>
         )}

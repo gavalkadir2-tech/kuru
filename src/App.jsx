@@ -3,6 +3,7 @@ import Auth from './Auth'
 import { VoiceFab } from './components/VoiceEntry'
 import { getSettings, list, save, saveSettings, setSyncUser, useAutoSync, useSyncState } from './lib/store'
 import { migratePeople } from './lib/people'
+import { resolveLoft, useIsHelper } from './lib/members'
 import { migrateLegacyPhotos } from './lib/photos'
 import { supabase } from './lib/supabase'
 import Assistant from './pages/Assistant'
@@ -37,6 +38,8 @@ const NAV = [
 ]
 // Telefonda alt çubukta görünenler
 const MOBILE_NAV = ['ana', 'kuslar', 'uretim', 'saglik', 'asistan']
+// Yardımcı hesabının göremediği sayfalar (satış, fiyat ve kişisel bilgiler)
+const HELPER_HIDDEN = ['alimsatim', 'defter', 'kisiler', 'kisi']
 
 function useRoute() {
   const read = () => window.location.hash.replace(/^#\/?/, '') || 'ana'
@@ -90,8 +93,15 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    setSyncUser(session?.user || null)
+    const user = session?.user
+    if (!user) return setSyncUser(null)
+    let alive = true
+    resolveLoft(user).then(({ ownerId, role }) => alive && setSyncUser(user, ownerId, role))
+    return () => {
+      alive = false
+    }
   }, [session?.user?.id])
+  const helper = useIsHelper()
 
   // Paylaşılan soy kütüğü bağlantısı giriş gerektirmez
   if (route.startsWith('soy/')) return <SharedPedigree code={route.slice(4)} />
@@ -107,7 +117,9 @@ export default function App() {
       />
     )
 
-  const [page, param] = route.split('/')
+  const [routePage, param] = route.split('/')
+  const page = helper && HELPER_HIDDEN.includes(routePage) ? 'ana' : routePage
+  const navItems = helper ? NAV.filter((n) => !HELPER_HIDDEN.includes(n.id)) : NAV
   const active = ['kus', 'belge', 'etiket'].includes(page) ? 'kuslar' : page === 'kisi' ? 'kisiler' : page
   let content
   switch (page) {
@@ -184,7 +196,7 @@ export default function App() {
           </div>
           <SyncDot />
         </div>
-        <nav>{nav(NAV, 'side-link')}</nav>
+        <nav>{nav(navItems, 'side-link')}</nav>
         {supabase && !session && (
           <button
             className="btn small block"
@@ -207,7 +219,7 @@ export default function App() {
       </header>
       <main>{content}</main>
       {!['asistan', 'belge', 'etiket'].includes(page) && <VoiceFab />}
-      <nav className="bottom-nav no-print">{nav(NAV.filter((n) => MOBILE_NAV.includes(n.id)), 'bottom-link')}</nav>
+      <nav className="bottom-nav no-print">{nav(navItems.filter((n) => MOBILE_NAV.includes(n.id)), 'bottom-link')}</nav>
     </div>
   )
 }

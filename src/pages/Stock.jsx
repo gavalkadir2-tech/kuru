@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { exportCSV, fmtDate, money, num, today } from '../lib/format'
 import { MOVE_SOURCES, STOCK_CATEGORIES, STOCK_UNITS, fmtQty, stockLevels } from '../lib/stock'
-import { get, list, remove, save, useCollection } from '../lib/store'
+import { get, isHelper, list, remove, save, useCollection } from '../lib/store'
 import { Badge, Empty, ErrorText, Field, Modal, SearchBox, Select, Tabs, confirmDel } from '../components/ui'
 
 function ItemForm({ initial, onClose }) {
@@ -113,9 +113,11 @@ function MoveForm({ item, kind, onClose }) {
         </Field>
         {kind === 'alim' && (
           <>
-            <Field label="Toplam tutar (₺)" hint="Gider defterine işlenir">
-              <input inputMode="decimal" value={f.cost} onChange={set('cost')} />
-            </Field>
+            {!isHelper() && (
+              <Field label="Toplam tutar (₺)" hint="Gider defterine işlenir">
+                <input inputMode="decimal" value={f.cost} onChange={set('cost')} />
+              </Field>
+            )}
             <Field label="Nereden alındı">
               <input value={f.supplier} onChange={set('supplier')} />
             </Field>

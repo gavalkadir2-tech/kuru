@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { compressImage, markdown, pigeonLabel } from '../lib/format'
-import { useCollection } from '../lib/store'
+import { isHelper, useCollection } from '../lib/store'
 import { PHOTO_LABELS, PhotoImg, deletePhoto, putPhoto } from '../lib/photos'
 
 export function Modal({ title, onClose, children, footer, wide }) {
@@ -165,6 +165,10 @@ export function ErrorText({ children }) {
 }
 
 export function confirmDel(label) {
+  if (isHelper()) {
+    window.alert('Yardımcı hesabı kayıt silemez. Silinmesi gereken kaydı güvercinlik sahibine bildirin.')
+    return false
+  }
   return window.confirm(`"${label}" silinsin mi? Bu işlem geri alınamaz.`)
 }
 

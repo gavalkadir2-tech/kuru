@@ -5,6 +5,7 @@ import { get, list, save, useCollection, useSettings } from '../lib/store'
 import { Badge, Empty, ErrorText, Field, Modal, PhotosEditor, PigeonSelect, SearchBox, Select, persistPhotos } from '../components/ui'
 import { PhotoImg } from '../lib/photos'
 import { afterPigeonSave, findPerson } from '../lib/people'
+import { useIsHelper } from '../lib/members'
 import { HealthForm } from './Health'
 import { FlightForm } from './Flights'
 
@@ -89,6 +90,7 @@ export function PigeonForm({ initial, onClose, onSaved }) {
     setF((s) => ({ ...s, [side + 'Phone']: s[side + 'Phone'] || person.phone || '', [side + 'City']: s[side + 'City'] || person.city || '' }))
   }
   const people = useCollection('people')
+  const helper = useIsHelper()
 
   const transfer = ['satildi', 'verildi'].includes(f.status)
   const lost = ['oldu', 'kayip'].includes(f.status)
@@ -183,7 +185,7 @@ export function PigeonForm({ initial, onClose, onSaved }) {
             <Field label="Geliş tarihi">
               <input type="date" value={f.fromDate} onChange={set('fromDate')} />
             </Field>
-            {f.origin === 'alis' && (
+            {f.origin === 'alis' && !helper && (
               <Field label="Alış fiyatı (₺)">
                 <input inputMode="decimal" value={f.fromPrice} onChange={set('fromPrice')} />
               </Field>
@@ -209,12 +211,12 @@ export function PigeonForm({ initial, onClose, onSaved }) {
             <Field label="Tarih">
               <input type="date" value={f.toDate} onChange={set('toDate')} />
             </Field>
-            {f.status === 'satildi' && (
+            {f.status === 'satildi' && !helper && (
               <Field label="Satış fiyatı (₺)">
                 <input inputMode="decimal" value={f.toPrice} onChange={set('toPrice')} />
               </Field>
             )}
-            {f.status === 'satildi' && (
+            {f.status === 'satildi' && !helper && (
               <label className="check full">
                 <input type="checkbox" checked={!!f.onCredit} onChange={(e) => setF((s) => ({ ...s, onCredit: e.target.checked }))} /> Ödeme alınmadı (veresiye) — müşterinin
                 cari hesabına borç yazılır
@@ -341,6 +343,7 @@ function BulkStatusForm({ ids, onClose }) {
 
 export default function Pigeons({ go }) {
   const pigeons = useCollection('pigeons')
+  const helper = useIsHelper()
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('aktif')
   const [sex, setSex] = useState('')
@@ -448,7 +451,7 @@ export default function Pigeons({ go }) {
               </div>
               <div className="pc-side">
                 <Badge tone={STATUS_TONE[p.status]}>{STATUS[p.status]}</Badge>
-                {p.status === 'satildi' && <span className="small muted">{money(p.toPrice)}</span>}
+                {p.status === 'satildi' && !helper && <span className="small muted">{money(p.toPrice)}</span>}
               </div>
             </button>
           ))}
