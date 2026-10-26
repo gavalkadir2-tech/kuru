@@ -1717,3 +1717,14 @@ code {
 .chart-tip.below {
   transform: translate(-50%, 14px);
 }
+.gen-title {
+  margin: 4px 0 8px;
+  font-size: 14px;
+}
+.gen-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}

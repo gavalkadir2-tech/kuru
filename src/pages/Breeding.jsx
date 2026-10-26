@@ -6,6 +6,7 @@ import { coiLabel, kinship, kinshipCoef, suggestMates } from '../lib/pedigree'
 import { get, remove, save, useCollection } from '../lib/store'
 import { Badge, Empty, ErrorText, Field, Modal, PigeonSelect, Stat, Tabs, confirmDel } from '../components/ui'
 import { PigeonForm } from './Pigeons'
+import ColorGenetics from './ColorGenetics'
 
 export function pairLabel(pr) {
   if (!pr) return '—'
@@ -344,6 +345,7 @@ export default function Breeding({ go }) {
   const [newChick, setNewChick] = useState(null)
   const [showClosed, setShowClosed] = useState(false)
   const [report, setReport] = useState(null)
+  const [geneticsPair, setGeneticsPair] = useState(null)
 
   const pairStats = useMemo(() => {
     const m = {}
@@ -407,7 +409,7 @@ export default function Breeding({ go }) {
           )}
         </div>
       </div>
-      <Tabs value={tab} onChange={setTab} tabs={{ kulucka: 'Yumurtlama & Kuluçka', ciftler: `Çiftler (${pairs.length})`, oner: 'Eş Önerisi' }} />
+      <Tabs value={tab} onChange={setTab} tabs={{ kulucka: 'Yumurtlama & Kuluçka', ciftler: `Çiftler (${pairs.length})`, oner: 'Eş Önerisi', renk: 'Renk Tahmini' }} />
 
       {tab === 'kulucka' && (
         <>
@@ -517,6 +519,15 @@ export default function Breeding({ go }) {
                     <button className="btn small primary" onClick={() => setReport(pr)}>
                       📋 Karne
                     </button>
+                    <button
+                      className="btn small"
+                      onClick={() => {
+                        setGeneticsPair(pr)
+                        setTab('renk')
+                      }}
+                    >
+                      🎨 Renk
+                    </button>
                     <button className="btn small" onClick={() => setPairEdit(pr)}>
                       Düzenle
                     </button>
@@ -534,6 +545,8 @@ export default function Breeding({ go }) {
         ))}
 
       {tab === 'oner' && <MateSuggest onPair={(m, f) => setPairEdit({ maleId: m, femaleId: f })} />}
+
+      {tab === 'renk' && <ColorGenetics key={geneticsPair?.id || 'yok'} initialMale={geneticsPair?.maleId} initialFemale={geneticsPair?.femaleId} />}
 
       {report && <PairReport pr={report} onClose={() => setReport(null)} go={go} />}
       {pairEdit && <PairForm initial={pairEdit} onClose={() => setPairEdit(null)} />}
