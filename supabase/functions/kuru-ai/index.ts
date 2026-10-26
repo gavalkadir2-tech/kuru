@@ -1,7 +1,9 @@
 // Kuru yapay zeka uç noktası (Supabase Edge Function).
-// Anthropic API anahtarı yalnızca burada, sunucu tarafında tutulur:
-//   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-// İsteğe bağlı: KURU_AI_MODEL (varsayılan claude-opus-5-5)
+// API anahtarları yalnızca burada, sunucu tarafında tutulur (Edge Functions → Secrets).
+// Hangi anahtar tanımlıysa o sağlayıcı kullanılır:
+//   GEMINI_API_KEY    → Google Gemini (ücretsiz kotası var). İsteğe bağlı: GEMINI_MODEL (varsayılan gemini-flash-latest)
+//   ANTHROPIC_API_KEY → Claude (ücretli). İsteğe bağlı: KURU_AI_MODEL (varsayılan claude-opus-5-5)
+// İkisi de tanımlıysa Gemini önceliklidir.
 import Anthropic from 'npm:@anthropic-ai/sdk'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -11,8 +13,11 @@ const cors = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY')
+const GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') || 'gemini-flash-latest'
+const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const MODEL = Deno.env.get('KURU_AI_MODEL') || 'claude-opus-5-5'
-const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') })
+const client = ANTHROPIC_KEY ? new Anthropic({ apiKey: ANTHROPIC_KEY }) : null
 
 const SYSTEM = `Sen "Kuru" adlı güvercin takip programının uzman asistanısın. Kullanıcı Türkiye'de güvercin yetiştiren Samet Kuru ve onun güvercinliği.
 Uzmanlık alanların: güvercin sağlığı ve hastalıkları, ilaçlama ve aşı takvimleri, bakım yöntemleri, yemleme ve rasyon hazırlama, üretim (eşleştirme, kuluçka, yavru bakımı), soy/ırk ıslahı. Türk güvercin ırklarını (taklacı, dolapçı, makaracı, kelebek, hünkari, mardin, şebap, posta vb.) bilirsin.
@@ -118,6 +123,74 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 }
 
+// deno-lint-ignore no-explicit-any
+type Msg = { role: string; content: any }
+
+async function callClaude(messages: Msg[], task: Body['task']) {
+  const params = {
+    model: MODEL,
+    max_tokens: 8000,
+    system: SYSTEM,
+    thinking: { type: 'adaptive' },
+    output_config: { effort: task === 'chat' ? 'low' : 'medium' },
+    messages,
+    // Güvenlik sınıflandırıcısı reddederse uygun modele otomatik geç
+    betas: ['server-side-fallback-2026-07-01'],
+    fallbacks: 'default',
+  }
+  // deno-lint-ignore no-explicit-any
+  const res: any = await client!.beta.messages.create(params as any)
+  if (res.stop_reason === 'refusal') {
+    return json({ error: 'Yapay zeka bu isteği yanıtlayamadı. Soruyu farklı ifade etmeyi deneyin.' }, 422)
+  }
+  const text = res.content
+    .filter((b: { type: string }) => b.type === 'text')
+    .map((b: { text: string }) => b.text)
+    .join('\n')
+    .trim()
+  if (!text) return json({ error: 'Boş yanıt alındı, tekrar deneyin.' }, 502)
+  return json({ text, truncated: res.stop_reason === 'max_tokens' })
+}
+
+// Gemini REST API (generateContent). Mesajlar Claude biçiminden çevrilir.
+async function callGemini(messages: Msg[]) {
+  const toParts = (content: unknown) =>
+    typeof content === 'string'
+      ? [{ text: content }]
+      : (content as { type: string; text?: string; source?: { media_type: string; data: string } }[]).map((b) =>
+          b.type === 'image' ? { inlineData: { mimeType: b.source!.media_type, data: b.source!.data } } : { text: b.text || '' },
+        )
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY! },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM }] },
+      contents: messages.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: toParts(m.content) })),
+      generationConfig: { maxOutputTokens: 8000 },
+    }),
+  })
+  // deno-lint-ignore no-explicit-any
+  const data: any = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = data?.error?.message || res.statusText
+    if (res.status === 429) return json({ error: 'Ücretsiz yapay zeka kotası doldu; bir süre sonra tekrar deneyin.' }, 429)
+    if (res.status === 400 && /API key/i.test(msg)) return json({ error: 'Gemini API anahtarı geçersiz.' }, 500)
+    if (res.status === 404) return json({ error: `Gemini modeli bulunamadı (${GEMINI_MODEL}). GEMINI_MODEL ayarını kontrol edin.` }, 500)
+    return json({ error: 'Yapay zeka hatası: ' + msg }, 502)
+  }
+  if (data.promptFeedback?.blockReason) {
+    return json({ error: 'Yapay zeka bu isteği yanıtlayamadı. Soruyu farklı ifade etmeyi deneyin.' }, 422)
+  }
+  const cand = data.candidates?.[0]
+  const text = (cand?.content?.parts || [])
+    .filter((p: { text?: string; thought?: boolean }) => p.text && !p.thought)
+    .map((p: { text: string }) => p.text)
+    .join('')
+    .trim()
+  if (!text) return json({ error: 'Boş yanıt alındı, tekrar deneyin.' }, 502)
+  return json({ text, truncated: cand?.finishReason === 'MAX_TOKENS' })
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'Yalnızca POST' }, 405)
@@ -130,7 +203,7 @@ Deno.serve(async (req) => {
   const { data: userData } = await supa.auth.getUser()
   if (!userData?.user) return json({ error: 'Oturum geçersiz, tekrar giriş yapın.' }, 401)
 
-  if (!Deno.env.get('ANTHROPIC_API_KEY')) return json({ error: 'Sunucuda ANTHROPIC_API_KEY tanımlı değil.' }, 500)
+  if (!GEMINI_KEY && !client) return json({ error: 'Sunucuda GEMINI_API_KEY veya ANTHROPIC_API_KEY tanımlı değil.' }, 500)
 
   let body: Body
   try {
@@ -140,29 +213,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const params = {
-      model: MODEL,
-      max_tokens: 8000,
-      system: SYSTEM,
-      thinking: { type: 'adaptive' },
-      output_config: { effort: body.task === 'chat' ? 'low' : 'medium' },
-      messages: buildMessages(body),
-      // Güvenlik sınıflandırıcısı reddederse uygun modele otomatik geç
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-    }
-    // deno-lint-ignore no-explicit-any
-    const res: any = await client.beta.messages.create(params as any)
-    if (res.stop_reason === 'refusal') {
-      return json({ error: 'Yapay zeka bu isteği yanıtlayamadı. Soruyu farklı ifade etmeyi deneyin.' }, 422)
-    }
-    const text = res.content
-      .filter((b: { type: string }) => b.type === 'text')
-      .map((b: { text: string }) => b.text)
-      .join('\n')
-      .trim()
-    if (!text) return json({ error: 'Boş yanıt alındı, tekrar deneyin.' }, 502)
-    return json({ text, truncated: res.stop_reason === 'max_tokens' })
+    const messages = buildMessages(body)
+    return GEMINI_KEY ? await callGemini(messages) : await callClaude(messages, body.task)
   } catch (e) {
     console.error(e)
     if (e instanceof Anthropic.RateLimitError) return json({ error: 'Çok fazla istek; biraz sonra tekrar deneyin.' }, 429)
