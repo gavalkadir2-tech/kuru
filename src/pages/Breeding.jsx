@@ -1,4 +1,4 @@
-import { Egg } from 'lucide-react'
+import { ClipboardList, Egg, Palette, Repeat } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { STATUS } from '../lib/constants'
 import { getTimings, useList } from '../lib/config'
@@ -222,7 +222,7 @@ function FosterForm({ clutch, onClose }) {
   }
   return (
     <Modal
-      title="🔄 Bakıcıya aktar"
+      title="Bakıcıya aktar"
       onClose={onClose}
       footer={
         <>
@@ -708,7 +708,7 @@ export default function Breeding({ go }) {
                         {chicks.length ? chicks.map((k) => k.ring).join(', ') : '—'}
                       </div>
                     </div>
-                    {c.fosterPairId && <div className="alert info small">🔄 {fosterText(c)}{c.fosterEggs ? ` · ${c.fosterEggs} yumurta` : ''}</div>}
+                    {c.fosterPairId && <div className="alert info small row gap-s"><Repeat size={14} /> {fosterText(c)}{c.fosterEggs ? ` · ${c.fosterEggs} yumurta` : ''}</div>}
                     {c.notes && <p className="small muted">{c.notes}</p>}
                     <div className="row gap-s wrap">
                       <button className="btn small" onClick={() => setClutchEdit(c)}>
@@ -716,7 +716,7 @@ export default function Breeding({ go }) {
                       </button>
                       {!c.failed && (
                         <button className="btn small" onClick={() => setFosterOf(c)}>
-                          🔄 {c.fosterPairId ? 'Bakıcıyı değiştir' : 'Bakıcıya aktar'}
+                          <Repeat size={14} /> {c.fosterPairId ? 'Bakıcıyı değiştir' : 'Bakıcıya aktar'}
                         </button>
                       )}
                       {!c.hatchDate && !c.failed && (
@@ -783,7 +783,7 @@ export default function Breeding({ go }) {
                   </div>
                   {s.fostered > 0 && (
                     <div className="small">
-                      🔄 Bakıcı olarak: {s.fostered} kuluçka, {s.fosterHatched} yavru çıkardı
+                      <Repeat size={13} /> Bakıcı olarak: {s.fostered} kuluçka, {s.fosterHatched} yavru çıkardı
                     </div>
                   )}
                   <div className="small">
@@ -792,7 +792,7 @@ export default function Breeding({ go }) {
                   {kin && <div className="small warn-text">⚠️ {kin.text}</div>}
                   <div className="row gap-s">
                     <button className="btn small primary" onClick={() => setReport(pr)}>
-                      📋 Karne
+                      <ClipboardList size={14} /> Karne
                     </button>
                     <button
                       className="btn small"
@@ -801,7 +801,7 @@ export default function Breeding({ go }) {
                         setTab('renk')
                       }}
                     >
-                      🎨 Renk
+                      <Palette size={14} /> Renk
                     </button>
                     <button className="btn small" onClick={() => setPairEdit(pr)}>
                       Düzenle

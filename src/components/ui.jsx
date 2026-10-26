@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { compressImage, markdown, pigeonLabel } from '../lib/format'
 import { isHelper, useCollection } from '../lib/store'
@@ -158,7 +159,7 @@ export function Stat({ label, value, sub, tone, onClick, icon: Icon }) {
 export function SearchBox({ value, onChange, placeholder = 'Ara…' }) {
   return (
     <div className="search">
-      <span aria-hidden>🔍</span>
+      <Search size={16} aria-hidden className="search-icon" />
       <input type="search" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
     </div>
   )

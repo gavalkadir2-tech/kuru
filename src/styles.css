@@ -2156,3 +2156,26 @@ textarea:focus {
   gap: 8px;
   border: 0;
 }
+/* Grid öğeleri içeriğe göre taşmasın */
+.card-list > *,
+.grid-2 > *,
+.stats > * {
+  min-width: 0;
+}
+.pigeon-card {
+  min-width: 0;
+  overflow: hidden;
+}
+.pc-side {
+  flex: none;
+}
+.small.row {
+  display: flex;
+}
+.search .search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+}

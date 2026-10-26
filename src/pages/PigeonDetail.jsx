@@ -1,3 +1,4 @@
+import { ScrollText, Tag } from 'lucide-react'
 import { useState } from 'react'
 import { HEALTH_TYPES, ORIGIN, SEX, STATUS } from '../lib/constants'
 import { ageText, fmtDate, money, pigeonLabel } from '../lib/format'
@@ -87,10 +88,10 @@ export default function PigeonDetail({ id, go }) {
         </button>
         <div className="row gap-s no-print">
           <button className="btn small" onClick={() => go(`belge/${p.id}`)}>
-            📜 Soy kütüğü
+            <ScrollText size={15} /> Soy kütüğü
           </button>
           <button className="btn small" onClick={() => go(`etiket/${p.id}`)}>
-            🏷️ Etiket
+            <Tag size={15} /> Etiket
           </button>
           <button className="btn small" onClick={() => setEdit(true)}>
             Düzenle

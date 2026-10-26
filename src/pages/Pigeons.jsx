@@ -1,4 +1,4 @@
-import { Bird } from 'lucide-react'
+import { Bird, HeartPulse, Repeat, Tag, Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ORIGIN, SEX, STATUS } from '../lib/constants'
 import { useList } from '../lib/config'
@@ -524,16 +524,16 @@ export default function Pigeons({ go }) {
         <div className="bulk-bar no-print">
           <span className="small">{sel.length} kuş</span>
           <button className="btn small" onClick={() => setBulk('health')}>
-            💊 İlaç
+            <HeartPulse size={14} /> İlaç
           </button>
           <button className="btn small" onClick={() => setBulk('flight')}>
-            🏆 Uçuş
+            <Trophy size={14} /> Uçuş
           </button>
           <button className="btn small" onClick={() => setBulk('status')}>
-            🔁 Durum
+            <Repeat size={14} /> Durum
           </button>
           <button className="btn small" onClick={() => go(`etiket/${sel.join(',')}`)}>
-            🏷️ Etiket
+            <Tag size={14} /> Etiket
           </button>
           <button className="btn small" onClick={() => exportRows(filtered.filter((p) => sel.includes(p.id)))}>
             Excel

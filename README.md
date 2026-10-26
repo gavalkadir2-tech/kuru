@@ -18,6 +18,9 @@ Samet Kuru için geliştirilmiş güvercin takip programı. Telefonda uygulama g
 | **Stok** | Yem, ilaç, vitamin, malzeme; alım/kullanım/sayım; yemleme ve ilaç kayıtlarından otomatik düşme; azalma uyarısı |
 | **Bildirimler** | Her gün seçilen saatte telefona o günün işleri (çıkış, halkalama, ayırma, ilaç tekrarı, azalan stok) |
 | **Sesle kayıt** | "3 numaralı yuvada bugün ilk yumurta var" gibi söylenenler yapay zekayla kayda dönüşür, onaylanınca kaydedilir |
+| **Ayarlanabilir listeler** | Renkler, ırklar, göz renkleri, kuş grupları, bölmeler, eşleştirme türleri, ilaçlar, gelir/gider kategorileri, hava durumları ve kuluçka/halkalama/ayırma süreleri Ayarlar'dan düzenlenir; tüm cihazlara eşitlenir |
+| **Görünüm** | Açık/koyu/otomatik tema, 6 vurgu rengi, yazı boyutu ve sıkışık yerleşim seçeneği |
+| **Yapay zeka** | Tüm kayıtları bilen asistan (sohbetten kayıt önerir, onayla kaydedilir), ana sayfada günün özeti, kuş değerlendirmesi (soy, yavru, sağlık, tartı, uçuş), sezon eşleştirme danışmanı (önerilen çiftler tek tuşla oluşturulur), hastalık tahmini, bakım planı, rasyon önerisi, sesle kayıt |
 | **Yardımcı hesabı** | Kümese bakan kişiye sınırlı erişim: kayıt girer/düzenler; silemez, fiyat ve gelir-gider göremez |
 | **Sağlık & İlaçlama** | Aşı, kür, tedavi, parazit, vitamin kayıtları; tüm sürüye veya seçili kuşlara; tekrar tarihleri ana sayfada hatırlatılır; maliyet |
 | **Hastalık tahmini** | 32 belirtiden seçim → 14 yaygın güvercin hastalığı için olasılık, aciliyet, tedavi ve korunma (internetsiz çalışır). Yapay zeka ile fotoğraf destekli detaylı analiz |
