@@ -57,3 +57,21 @@ create policy "kuru_photos_update" on storage.objects for update
 drop policy if exists "kuru_photos_delete" on storage.objects;
 create policy "kuru_photos_delete" on storage.objects for delete
   using (bucket_id = 'kuru-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ---------- Bildirim abonelikleri ----------
+create table if not exists public.kuru_push_subs (
+  endpoint text primary key,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade, -- aboneliği açan kişi
+  owner_id uuid not null,                                                                 -- güvercinlik sahibi
+  sub jsonb not null,
+  hour int not null default 8,
+  tz text not null default 'Europe/Istanbul',
+  last_sent date,
+  created_at timestamptz not null default now()
+);
+
+alter table public.kuru_push_subs enable row level security;
+
+drop policy if exists "kuru_push_own" on public.kuru_push_subs;
+create policy "kuru_push_own" on public.kuru_push_subs for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
