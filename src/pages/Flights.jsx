@@ -1,13 +1,15 @@
+import { Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { exportCSV, fmtDate, num, pigeonLabel, today } from '../lib/format'
 import { flightStats, fmtDuration, lineStats } from '../lib/performance'
 import { get, remove, save, useCollection } from '../lib/store'
-import { Badge, Empty, ErrorText, Field, Modal, Tabs, confirmDel } from '../components/ui'
+import { Badge, confirmDel, Empty, ErrorText, Field, Modal, PageTitle, Tabs } from '../components/ui'
 import { PigeonMulti } from './Health'
 
-const WEATHER = ['Açık', 'Parçalı bulutlu', 'Kapalı', 'Rüzgârlı', 'Yağmurlu', 'Sisli', 'Sıcak', 'Soğuk']
+import { useList } from '../lib/config'
 
 export function FlightForm({ initial, onClose }) {
+  const WEATHER = useList('weather')
   const [f, setF] = useState(() => {
     const d = { date: today(), pigeonIds: [], hours: '', minutes: '', score: '', plays: '', weather: '', notes: '', ...initial }
     if (initial?.durationMin) {
@@ -157,7 +159,7 @@ export default function Flights({ go }) {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Uçuş & Oyun</h1>
+        <PageTitle icon={Trophy} title="Uçuş & Oyun" subtitle="Uçuş süresi, oyun puanı ve en iyi hatlar" />
         <div className="row gap-s">
           <button
             className="btn ghost small"

@@ -1,12 +1,16 @@
+import { ClipboardList, Egg, Palette, Repeat } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { INCUBATION_DAYS, RING_DAY, STATUS, WEAN_DAY } from '../lib/constants'
+import { STATUS } from '../lib/constants'
+import { getTimings, useList } from '../lib/config'
 import { addDays, daysBetween, exportCSV, fmtDate, money, pigeonLabel, today } from '../lib/format'
 import { flightStats } from '../lib/performance'
 import { coiLabel, kinship, kinshipCoef, suggestMates } from '../lib/pedigree'
 import { get, list, remove, save, useCollection } from '../lib/store'
-import { Badge, Empty, ErrorText, Field, Modal, PigeonSelect, Stat, Tabs, confirmDel } from '../components/ui'
+import { Badge, confirmDel, Empty, ErrorText, Field, Modal, PageTitle, PigeonSelect, SearchBox, Select, Stat, Tabs } from '../components/ui'
+import { predict } from '../lib/genetics'
 import { PigeonForm } from './Pigeons'
 import ColorGenetics from './ColorGenetics'
+import { MatingAdvisor } from '../components/AiPanels'
 
 export function pairLabel(pr) {
   if (!pr) return '—'
@@ -22,6 +26,7 @@ export function fosterText(c) {
 }
 
 export function clutchDates(c) {
+  const { incubationDays: INCUBATION_DAYS, ringDay: RING_DAY, weanDay: WEAN_DAY, candleDay } = getTimings()
   const start = c.egg2Date || c.egg1Date
   const expectedHatch = start ? addDays(start, INCUBATION_DAYS) : ''
   const hatch = c.hatchDate || ''
@@ -30,11 +35,12 @@ export function clutchDates(c) {
     expectedHatch,
     ringDate: base ? addDays(base, RING_DAY) : '',
     weanDate: base ? addDays(base, WEAN_DAY) : '',
-    candleDate: start ? addDays(start, 7) : '',
+    candleDate: start ? addDays(start, candleDay) : '',
   }
 }
 
 export function clutchStatus(c) {
+  const { incubationDays: INCUBATION_DAYS, weanDay: WEAN_DAY } = getTimings()
   const d = clutchDates(c)
   const t = today()
   if (c.closed) return { text: 'Tamamlandı', tone: 'neutral' }
@@ -51,22 +57,72 @@ export function clutchStatus(c) {
   return { text: `Kuluçkada · ${Math.max(0, day)}/${INCUBATION_DAYS}. gün`, tone: 'info' }
 }
 
+// Seçilen kuşun kısa künyesi (çift formunda)
+function BirdBrief({ id }) {
+  const p = id && get('pigeons', id)
+  if (!p) return null
+  return (
+    <div className="bird-brief">
+      {[p.breed, p.color, p.group, p.eyeColor && `göz: ${p.eyeColor}`, p.birthDate && fmtDate(p.birthDate)].filter(Boolean).join(' · ') || 'Bilgi girilmemiş'}
+    </div>
+  )
+}
+
+// Ebeveynlerin kayıtlı genotipi varsa beklenen yavru renklerinin özeti
+function ColorPreview({ maleId, femaleId }) {
+  const m = get('pigeons', maleId)?.genotype
+  const f = get('pigeons', femaleId)?.genotype
+  if (!m || !f) return null
+  const res = predict(m, f)
+  const top = (sex) => {
+    const map = new Map()
+    for (const r of res.filter((x) => x.sex === sex)) map.set(r.name, (map.get(r.name) || 0) + r.p)
+    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n, p]) => `${n} %${Math.round(p * 100)}`).join(', ')
+  }
+  return (
+    <div className="alert info full small">
+      <strong>Beklenen yavru renkleri</strong>
+      <div>♂ {top('E')}</div>
+      <div>♀ {top('D')}</div>
+    </div>
+  )
+}
+
 function PairForm({ initial, onClose }) {
-  const [f, setF] = useState({ maleId: '', femaleId: '', startDate: today(), nest: '', active: true, notes: '', ...initial })
+  const pairTypes = useList('pairTypes')
+  const colors = useList('colors')
+  const [f, setF] = useState({
+    maleId: '',
+    femaleId: '',
+    startDate: today(),
+    season: String(new Date().getFullYear()),
+    type: pairTypes[0] || '',
+    targetColor: '',
+    nest: '',
+    active: true,
+    notes: '',
+    ...initial,
+  })
   const [err, setErr] = useState('')
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v?.target ? (v.target.type === 'checkbox' ? v.target.checked : v.target.value) : v }))
   const kin = kinship(f.maleId, f.femaleId)
   const coi = f.maleId && f.femaleId ? coiLabel(kinshipCoef(f.maleId, f.femaleId)) : null
+  const busy = useCollection('pairs').filter((p) => p.active !== false && p.id !== f.id)
+  const otherPair = (id) => busy.find((p) => p.maleId === id || p.femaleId === id)
   const submit = (e) => {
     e.preventDefault()
     if (!f.maleId || !f.femaleId) return setErr('Erkek ve dişi seçiniz.')
-    save('pairs', f)
+    const dup = busy.find((p) => p.maleId === f.maleId && p.femaleId === f.femaleId)
+    if (dup) return setErr('Bu iki kuş zaten aktif bir çift olarak kayıtlı.')
+    // "Bakıcı" türü seçildiyse bakıcı işaretini de koy
+    save('pairs', { ...f, foster: f.foster || /bak[ıi]c[ıi]/i.test(f.type || '') })
     onClose()
   }
   return (
     <Modal
       title={f.id ? 'Çifti düzenle' : 'Yeni eşleştirme'}
       onClose={onClose}
+      wide
       footer={
         <>
           <button className="btn ghost" onClick={onClose}>
@@ -82,21 +138,46 @@ function PairForm({ initial, onClose }) {
         <ErrorText>{err}</ErrorText>
         <Field label="Erkek *">
           <PigeonSelect value={f.maleId} onChange={set('maleId')} sex="E" includeInactive={false} />
+          <BirdBrief id={f.maleId} />
         </Field>
         <Field label="Dişi *">
           <PigeonSelect value={f.femaleId} onChange={set('femaleId')} sex="D" includeInactive={false} />
+          <BirdBrief id={f.femaleId} />
         </Field>
+        {[f.maleId, f.femaleId].map((id) => {
+          const o = id && otherPair(id)
+          return o ? (
+            <div key={id} className="alert warn full small">
+              {get('pigeons', id)?.ring} şu anda başka bir aktif çiftte: {pairLabel(o)}
+            </div>
+          ) : null
+        })}
         {kin && <div className={'alert full ' + (kin.type === 'direct' || kin.closest <= 1 ? 'error' : 'warn')}>⚠️ {kin.text}</div>}
         {coi && (
           <div className={'alert full ' + (coi.tone === 'danger' ? 'error' : coi.tone === 'ok' ? 'info' : coi.tone)}>
             Yavrunun akrabalık katsayısı: <strong>{coi.text}</strong>
           </div>
         )}
+        <ColorPreview maleId={f.maleId} femaleId={f.femaleId} />
+        <Field label="Eşleştirme türü">
+          <Select value={f.type} onChange={set('type')} options={f.type && !pairTypes.includes(f.type) ? [...pairTypes, f.type] : pairTypes} placeholder="—" />
+        </Field>
+        <Field label="Sezon">
+          <input inputMode="numeric" value={f.season} onChange={set('season')} />
+        </Field>
         <Field label="Eşleştirme tarihi">
           <input type="date" value={f.startDate} onChange={set('startDate')} />
         </Field>
         <Field label="Yuva / Göz no">
           <input value={f.nest} onChange={set('nest')} />
+        </Field>
+        <Field label="Hedef renk / özellik" hint="Bu eşleştirmeden ne bekliyorsunuz?">
+          <input list="target-colors" value={f.targetColor} onChange={set('targetColor')} />
+          <datalist id="target-colors">
+            {colors.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </Field>
         <label className="check full">
           <input type="checkbox" checked={f.active !== false} onChange={set('active')} /> Çift aktif
@@ -141,7 +222,7 @@ function FosterForm({ clutch, onClose }) {
   }
   return (
     <Modal
-      title="🔄 Bakıcıya aktar"
+      title="Bakıcıya aktar"
       onClose={onClose}
       footer={
         <>
@@ -390,8 +471,24 @@ function MateSuggest({ onPair }) {
   const pigeons = useCollection('pigeons')
   const pairs = useCollection('pairs')
   const [id, setId] = useState('')
+  const [sameBreed, setSameBreed] = useState(false)
+  const [color, setColor] = useState('')
+  const [group, setGroup] = useState('')
+  const [freeOnly, setFreeOnly] = useState(false)
+  const [maxCoi, setMaxCoi] = useState('')
   const bird = id ? get('pigeons', id) : null
-  const rows = useMemo(() => (id ? suggestMates(id) : []), [id, pigeons])
+  const all = useMemo(() => (id ? suggestMates(id) : []), [id, pigeons])
+  const pairedSet = new Set(pairs.filter((p) => p.active !== false).flatMap((p) => [p.maleId, p.femaleId]))
+  const rows = all.filter(
+    (r) =>
+      (!sameBreed || r.sameBreed) &&
+      (!color || r.pigeon.color === color) &&
+      (!group || r.pigeon.group === group) &&
+      (!freeOnly || !pairedSet.has(r.pigeon.id)) &&
+      (maxCoi === '' || r.coi * 100 <= +maxCoi),
+  )
+  const candColors = [...new Set(all.map((r) => r.pigeon.color).filter(Boolean))]
+  const candGroups = [...new Set(all.map((r) => r.pigeon.group).filter(Boolean))]
   const paired = new Set(pairs.filter((p) => p.active !== false).flatMap((p) => [p.maleId, p.femaleId]))
   return (
     <>
@@ -399,12 +496,29 @@ function MateSuggest({ onPair }) {
         <Field label="Eş aranacak kuş">
           <PigeonSelect value={id} onChange={setId} includeInactive={false} placeholder="Kuş seçin" />
         </Field>
+        {bird && (
+          <div className="toolbar">
+            {candColors.length > 0 && <Select value={color} onChange={setColor} options={candColors} placeholder="Tüm renkler" />}
+            {candGroups.length > 0 && <Select value={group} onChange={setGroup} options={candGroups} placeholder="Tüm gruplar" />}
+            <Select value={maxCoi} onChange={setMaxCoi} options={{ 0: 'Akrabalık yok', 3.125: 'En fazla %3,1', 6.25: 'En fazla %6,25', 12.5: 'En fazla %12,5' }} placeholder="Akrabalık sınırı yok" />
+          </div>
+        )}
+        {bird && (
+          <div className="row gap wrap small">
+            <label className="check">
+              <input type="checkbox" checked={sameBreed} onChange={(e) => setSameBreed(e.target.checked)} /> Yalnızca aynı ırk
+            </label>
+            <label className="check">
+              <input type="checkbox" checked={freeOnly} onChange={(e) => setFreeOnly(e.target.checked)} /> Yalnızca eşi olmayanlar
+            </label>
+          </div>
+        )}
         <p className="small muted">
           Adaylar yavrunun akrabalık katsayısına göre en düşükten sıralanır. Katsayı, kayıtlı soy bilgisinden hesaplanır; kayıtsız atalar akraba sayılmaz.
         </p>
       </div>
       {bird && !['E', 'D'].includes(bird.sex) && <div className="alert warn">Cinsiyeti belirsiz kuş için öneri yapılamaz.</div>}
-      {bird && ['E', 'D'].includes(bird.sex) && rows.length === 0 && <Empty title="Uygun aktif eş adayı yok" />}
+      {bird && ['E', 'D'].includes(bird.sex) && rows.length === 0 && <Empty title={all.length ? 'Filtrelere uyan aday yok' : 'Uygun aktif eş adayı yok'} />}
       {rows.length > 0 && (
         <div className="card table-wrap">
           <table className="table">
@@ -412,6 +526,7 @@ function MateSuggest({ onPair }) {
               <tr>
                 <th>Aday</th>
                 <th>Irk</th>
+                <th>Renk</th>
                 <th>Yavru akrabalığı</th>
                 <th />
               </tr>
@@ -428,6 +543,7 @@ function MateSuggest({ onPair }) {
                     <td>
                       {p.breed || '—'} {sameBreed && '✓'}
                     </td>
+                    <td>{p.color || '—'}</td>
                     <td>
                       <Badge tone={c.tone}>{c.text.split(' — ')[0]}</Badge>
                     </td>
@@ -459,6 +575,20 @@ export default function Breeding({ go }) {
   const [report, setReport] = useState(null)
   const [geneticsPair, setGeneticsPair] = useState(null)
   const [fosterOf, setFosterOf] = useState(null)
+  const [pq, setPq] = useState('')
+  const [ptype, setPtype] = useState('')
+  const [pseason, setPseason] = useState('')
+  const [pstate, setPstate] = useState('aktif')
+  const shownPairs = pairs.filter((pr) => {
+    if (ptype && pr.type !== ptype) return false
+    if (pseason && pr.season !== pseason) return false
+    if (pstate === 'aktif' && pr.active === false) return false
+    if (pstate === 'ayrildi' && pr.active !== false) return false
+    if (!pq) return true
+    const m = get('pigeons', pr.maleId)
+    const f = get('pigeons', pr.femaleId)
+    return [m?.ring, m?.name, f?.ring, f?.name, pr.nest].some((v) => String(v || '').toLocaleLowerCase('tr').includes(pq.toLocaleLowerCase('tr')))
+  })
 
   const pairStats = useMemo(() => {
     const m = {}
@@ -513,7 +643,7 @@ export default function Breeding({ go }) {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Üretim</h1>
+        <PageTitle icon={Egg} title="Üretim" subtitle="Eşleştirme, yumurtlama, kuluçka ve yavrular" />
         <div className="row gap-s">
           <button className="btn ghost small" onClick={exportRows}>
             Excel
@@ -529,7 +659,7 @@ export default function Breeding({ go }) {
           )}
         </div>
       </div>
-      <Tabs value={tab} onChange={setTab} tabs={{ kulucka: 'Yumurtlama & Kuluçka', ciftler: `Çiftler (${pairs.length})`, oner: 'Eş Önerisi', renk: 'Renk Tahmini' }} />
+      <Tabs value={tab} onChange={setTab} tabs={{ kulucka: 'Yumurtlama & Kuluçka', ciftler: `Çiftler (${pairs.length})`, oner: 'Eş Önerisi', danisman: 'AI Danışman', renk: 'Renk Tahmini' }} />
 
       {tab === 'kulucka' && (
         <>
@@ -578,7 +708,7 @@ export default function Breeding({ go }) {
                         {chicks.length ? chicks.map((k) => k.ring).join(', ') : '—'}
                       </div>
                     </div>
-                    {c.fosterPairId && <div className="alert info small">🔄 {fosterText(c)}{c.fosterEggs ? ` · ${c.fosterEggs} yumurta` : ''}</div>}
+                    {c.fosterPairId && <div className="alert info small row gap-s"><Repeat size={14} /> {fosterText(c)}{c.fosterEggs ? ` · ${c.fosterEggs} yumurta` : ''}</div>}
                     {c.notes && <p className="small muted">{c.notes}</p>}
                     <div className="row gap-s wrap">
                       <button className="btn small" onClick={() => setClutchEdit(c)}>
@@ -586,7 +716,7 @@ export default function Breeding({ go }) {
                       </button>
                       {!c.failed && (
                         <button className="btn small" onClick={() => setFosterOf(c)}>
-                          🔄 {c.fosterPairId ? 'Bakıcıyı değiştir' : 'Bakıcıya aktar'}
+                          <Repeat size={14} /> {c.fosterPairId ? 'Bakıcıyı değiştir' : 'Bakıcıya aktar'}
                         </button>
                       )}
                       {!c.hatchDate && !c.failed && (
@@ -614,12 +744,20 @@ export default function Breeding({ go }) {
         </>
       )}
 
+      {tab === 'ciftler' && pairs.length > 0 && (
+        <div className="toolbar">
+          <SearchBox value={pq} onChange={setPq} placeholder="Halka no, ad, yuva" />
+          <Select value={ptype} onChange={setPtype} options={[...new Set(pairs.map((p) => p.type).filter(Boolean))]} placeholder="Tüm türler" />
+          <Select value={pseason} onChange={setPseason} options={[...new Set(pairs.map((p) => p.season).filter(Boolean))].sort().reverse()} placeholder="Tüm sezonlar" />
+          <Select value={pstate} onChange={setPstate} options={{ aktif: 'Aktif çiftler', ayrildi: 'Ayrılanlar' }} placeholder="Hepsi" />
+        </div>
+      )}
       {tab === 'ciftler' &&
-        (pairs.length === 0 ? (
-          <Empty icon="💞" title="Henüz çift yok" />
+        (shownPairs.length === 0 ? (
+          <Empty icon="💞" title={pairs.length ? 'Filtreye uyan çift yok' : 'Henüz çift yok'} />
         ) : (
           <div className="card-list">
-            {pairs.map((pr) => {
+            {shownPairs.map((pr) => {
               const s = pairStats[pr.id] || { clutches: 0, eggs: 0, hatched: 0 }
               const rate = s.eggs ? Math.round((s.hatched / s.eggs) * 100) : null
               const kin = kinship(pr.maleId, pr.femaleId)
@@ -637,12 +775,15 @@ export default function Breeding({ go }) {
                     ♂ {pigeonLabel(get('pigeons', pr.maleId))} · ♀ {pigeonLabel(get('pigeons', pr.femaleId))}
                   </div>
                   <div className="small">
+                    {[pr.type, pr.season && `${pr.season} sezonu`, pr.targetColor && `hedef: ${pr.targetColor}`].filter(Boolean).join(' · ')}
+                  </div>
+                  <div className="small">
                     {fmtDate(pr.startDate)} · {s.clutches} kuluçka · {s.eggs} yumurta · {s.hatched} yavru
                     {rate != null && ` · Verim %${rate}`}
                   </div>
                   {s.fostered > 0 && (
                     <div className="small">
-                      🔄 Bakıcı olarak: {s.fostered} kuluçka, {s.fosterHatched} yavru çıkardı
+                      <Repeat size={13} /> Bakıcı olarak: {s.fostered} kuluçka, {s.fosterHatched} yavru çıkardı
                     </div>
                   )}
                   <div className="small">
@@ -651,7 +792,7 @@ export default function Breeding({ go }) {
                   {kin && <div className="small warn-text">⚠️ {kin.text}</div>}
                   <div className="row gap-s">
                     <button className="btn small primary" onClick={() => setReport(pr)}>
-                      📋 Karne
+                      <ClipboardList size={14} /> Karne
                     </button>
                     <button
                       className="btn small"
@@ -660,7 +801,7 @@ export default function Breeding({ go }) {
                         setTab('renk')
                       }}
                     >
-                      🎨 Renk
+                      <Palette size={14} /> Renk
                     </button>
                     <button className="btn small" onClick={() => setPairEdit(pr)}>
                       Düzenle
@@ -680,6 +821,7 @@ export default function Breeding({ go }) {
 
       {tab === 'oner' && <MateSuggest onPair={(m, f) => setPairEdit({ maleId: m, femaleId: f })} />}
 
+      {tab === 'danisman' && <MatingAdvisor />}
       {tab === 'renk' && <ColorGenetics key={geneticsPair?.id || 'yok'} initialMale={geneticsPair?.maleId} initialFemale={geneticsPair?.femaleId} />}
 
       {fosterOf && <FosterForm clutch={fosterOf} onClose={() => setFosterOf(null)} />}

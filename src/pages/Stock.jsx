@@ -1,8 +1,9 @@
+import { Package } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { exportCSV, fmtDate, money, num, today } from '../lib/format'
 import { MOVE_SOURCES, STOCK_CATEGORIES, STOCK_UNITS, fmtQty, stockLevels } from '../lib/stock'
 import { get, isHelper, list, remove, save, useCollection } from '../lib/store'
-import { Badge, Empty, ErrorText, Field, Modal, SearchBox, Select, Tabs, confirmDel } from '../components/ui'
+import { Badge, confirmDel, Empty, ErrorText, Field, Modal, PageTitle, SearchBox, Select, Tabs } from '../components/ui'
 
 function ItemForm({ initial, onClose }) {
   const [f, setF] = useState({ name: '', category: 'yem', unit: 'kg', minQty: '', notes: '', ...initial })
@@ -150,7 +151,7 @@ export default function Stock() {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Stok</h1>
+        <PageTitle icon={Package} title="Stok" subtitle="Yem, ilaç ve malzeme stoğu" />
         <div className="row gap-s">
           <button
             className="btn ghost small"

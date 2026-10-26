@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Auth from './Auth'
 import { VoiceFab } from './components/VoiceEntry'
+import { ArrowLeftRight, Bird, Egg, HeartPulse, LayoutDashboard, Menu, Package, Settings as SettingsIcon, Sparkles, Trophy, Users, Wallet, Wheat } from 'lucide-react'
 import { getSettings, list, save, saveSettings, setSyncUser, useAutoSync, useSyncState } from './lib/store'
 import { migratePeople } from './lib/people'
 import { resolveLoft, useIsHelper } from './lib/members'
@@ -23,18 +24,18 @@ import Stock from './pages/Stock'
 import Trade from './pages/Trade'
 
 const NAV = [
-  { id: 'ana', icon: '🏠', label: 'Ana Sayfa' },
-  { id: 'kuslar', icon: '🕊️', label: 'Güvercinler' },
-  { id: 'uretim', icon: '🥚', label: 'Üretim' },
-  { id: 'saglik', icon: '🩺', label: 'Sağlık' },
-  { id: 'yem', icon: '🌾', label: 'Yemleme' },
-  { id: 'ucus', icon: '🏆', label: 'Uçuş & Oyun' },
-  { id: 'asistan', icon: '🤖', label: 'AI Asistan' },
-  { id: 'stok', icon: '📦', label: 'Stok' },
-  { id: 'alimsatim', icon: '🤝', label: 'Alım-Satım' },
-  { id: 'kisiler', icon: '👥', label: 'Kişiler' },
-  { id: 'defter', icon: '📒', label: 'Gelir-Gider' },
-  { id: 'ayarlar', icon: '⚙️', label: 'Ayarlar' },
+  { id: 'ana', icon: LayoutDashboard, label: 'Ana Sayfa', group: '' },
+  { id: 'kuslar', icon: Bird, label: 'Güvercinler', group: 'Kümes' },
+  { id: 'uretim', icon: Egg, label: 'Üretim', group: 'Kümes' },
+  { id: 'ucus', icon: Trophy, label: 'Uçuş & Oyun', group: 'Kümes' },
+  { id: 'saglik', icon: HeartPulse, label: 'Sağlık', group: 'Bakım' },
+  { id: 'yem', icon: Wheat, label: 'Yemleme', group: 'Bakım' },
+  { id: 'stok', icon: Package, label: 'Stok', group: 'Bakım' },
+  { id: 'alimsatim', icon: ArrowLeftRight, label: 'Alım-Satım', group: 'Ticaret' },
+  { id: 'kisiler', icon: Users, label: 'Kişiler', group: 'Ticaret' },
+  { id: 'defter', icon: Wallet, label: 'Gelir-Gider', group: 'Ticaret' },
+  { id: 'asistan', icon: Sparkles, label: 'AI Asistan', group: 'Akıllı' },
+  { id: 'ayarlar', icon: SettingsIcon, label: 'Ayarlar', group: 'Sistem' },
 ]
 // Telefonda alt çubukta görünenler
 const MOBILE_NAV = ['ana', 'kuslar', 'uretim', 'saglik', 'asistan']
@@ -172,18 +173,17 @@ export default function App() {
       content = <Dashboard go={go} />
   }
 
-  const nav = (items, cls) =>
-    items.map((n) => (
-      <a
-        key={n.id}
-        href={'#/' + n.id}
-        className={cls + (active === n.id ? ' active' : '')}
-        onClick={() => setMenu(false)}
-      >
-        <span className="nav-icon">{n.icon}</span>
+  const link = (n, cls) => {
+    const Icon = n.icon
+    return (
+      <a key={n.id} href={'#/' + n.id} className={cls + (active === n.id ? ' active' : '')} onClick={() => setMenu(false)} aria-current={active === n.id ? 'page' : undefined}>
+        <Icon className="nav-icon" size={cls === 'bottom-link' ? 22 : 18} strokeWidth={active === n.id ? 2.4 : 2} />
         <span className="nav-label">{n.label}</span>
       </a>
-    ))
+    )
+  }
+  const groups = [...new Set(navItems.map((n) => n.group))]
+  const current = NAV.find((n) => n.id === active)
 
   return (
     <div className="app">
@@ -196,7 +196,14 @@ export default function App() {
           </div>
           <SyncDot />
         </div>
-        <nav>{nav(navItems, 'side-link')}</nav>
+        <nav>
+          {groups.map((g) => (
+            <div key={g || 'genel'} className="nav-group">
+              {g && <span className="nav-group-label">{g}</span>}
+              {navItems.filter((n) => n.group === g).map((n) => link(n, 'side-link'))}
+            </div>
+          ))}
+        </nav>
         {supabase && !session && (
           <button
             className="btn small block"
@@ -212,14 +219,14 @@ export default function App() {
       {menu && <div className="scrim no-print" onClick={() => setMenu(false)} />}
       <header className="topbar no-print">
         <button className="icon-btn" onClick={() => setMenu(true)} aria-label="Menü">
-          ☰
+          <Menu size={22} />
         </button>
-        <strong>Kuru</strong>
+        <strong>{current?.label || 'Kuru'}</strong>
         <SyncDot />
       </header>
       <main>{content}</main>
       {!['asistan', 'belge', 'etiket'].includes(page) && <VoiceFab />}
-      <nav className="bottom-nav no-print">{nav(navItems.filter((n) => MOBILE_NAV.includes(n.id)), 'bottom-link')}</nav>
+      <nav className="bottom-nav no-print">{navItems.filter((n) => MOBILE_NAV.includes(n.id)).map((n) => link(n, 'bottom-link'))}</nav>
     </div>
   )
 }

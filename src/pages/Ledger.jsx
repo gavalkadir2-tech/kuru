@@ -1,10 +1,10 @@
+import { Wallet } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { exportCSV, fmtDate, money, num, pigeonLabel, today } from '../lib/format'
 import { get, remove, save, useCollection } from '../lib/store'
-import { Badge, Empty, ErrorText, Field, Modal, Select, Stat, Tabs, confirmDel } from '../components/ui'
+import { Badge, confirmDel, Empty, ErrorText, Field, Modal, PageTitle, Select, Stat, Tabs } from '../components/ui'
 
-export const INCOME_CATS = ['Kuş satışı', 'Yarış / Yarışma ödülü', 'Gübre satışı', 'Diğer gelir']
-export const EXPENSE_CATS = ['Yem', 'İlaç / Aşı', 'Vitamin / Takviye', 'Veteriner / Sağlık', 'Kuş alımı', 'Malzeme / Ekipman', 'Kümes bakım / Tadilat', 'Halka / Aidat', 'Ulaşım', 'Diğer gider']
+import { useList } from '../lib/config'
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
 
 // Elle girilen kayıtlar + diğer modüllerdeki tutarlardan otomatik türeyen kayıtlar
@@ -30,7 +30,10 @@ function EntryForm({ initial, onClose }) {
   const [f, setF] = useState({ date: today(), type: 'gider', category: '', amount: '', note: '', person: '', ...initial })
   const [err, setErr] = useState('')
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v?.target ? v.target.value : v }))
-  const cats = f.type === 'gelir' ? INCOME_CATS : EXPENSE_CATS
+  const incomeCats = useList('incomeCats')
+  const expenseCats = useList('expenseCats')
+  const base = f.type === 'gelir' ? incomeCats : expenseCats
+  const cats = f.category && !base.includes(f.category) ? [...base, f.category] : base
   const submit = (e) => {
     e.preventDefault()
     if (!num(f.amount) || num(f.amount) <= 0) return setErr('Geçerli bir tutar girin.')
@@ -121,7 +124,7 @@ export default function Ledger({ go }) {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Gelir – Gider</h1>
+        <PageTitle icon={Wallet} title="Gelir – Gider" subtitle="Kâr-zarar ve kategori dağılımı" />
         <div className="row gap-s">
           <button
             className="btn ghost small"

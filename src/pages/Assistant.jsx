@@ -1,13 +1,17 @@
+import { Camera, SendHorizontal, Sparkles } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { askAI } from '../lib/ai'
 import { today } from '../lib/format'
-import { flockSummary } from '../lib/localAi'
-import { list } from '../lib/store'
+import { flockContext } from '../lib/aiContext'
+import ActionCards, { splitActions } from '../components/ActionCards'
 import { cloudEnabled } from '../lib/supabase'
-import { ErrorText, Markdown, PhotoInput } from '../components/ui'
+import { ErrorText, Markdown, PageTitle, PhotoInput } from '../components/ui'
 
 const KEY = 'kuru:chat:v1'
 const SUGGESTIONS = [
+  'Bugün ne yapmam gerekiyor?',
+  'En iyi uçan kuşlarım hangileri, hangi hattan geliyorlar?',
+  'Son 3 ayın sağlık kayıtlarına göre eksik kalan kür veya aşı var mı?',
   'Üreme dönemine nasıl hazırlanmalıyım?',
   'Yavrularda yeşil ishal var, ne yapmalıyım?',
   'Tüy değişiminde nasıl beslemeliyim?',
@@ -51,9 +55,9 @@ export default function Assistant() {
     setLoading(true)
     setErr('')
     try {
-      const summary = flockSummary({ pigeons: list('pigeons'), pairs: list('pairs'), clutches: list('clutches'), health: list('health') })
-      const reply = await askAI('chat', { messages: next.slice(-12), summary, date: today() })
-      setMsgs((m) => [...m, { role: 'assistant', content: reply }])
+      const reply = await askAI('chat', { messages: next.slice(-12).map(({ actions, ...m }) => m), context: flockContext(), date: today() })
+      const { text: content, actions } = splitActions(reply)
+      setMsgs((m) => [...m, { role: 'assistant', content, actions: actions.length ? actions : undefined }])
     } catch (e) {
       setErr(e.message)
     } finally {
@@ -64,7 +68,7 @@ export default function Assistant() {
   return (
     <div className="page chat-page">
       <div className="page-head">
-        <h1>AI Asistan</h1>
+        <PageTitle icon={Sparkles} title="AI Asistan" subtitle="Bakım, sağlık, beslenme ve üretim soruları" />
         {msgs.length > 0 && (
           <button className="btn ghost small" onClick={() => window.confirm('Sohbet geçmişi silinsin mi?') && setMsgs([])}>
             Temizle
@@ -79,7 +83,10 @@ export default function Assistant() {
       <div className="chat">
         {msgs.length === 0 && (
           <div className="card">
-            <p>Güvercin bakımı, hastalıklar, ilaçlama, beslenme ve üretim hakkında sorun. Sürünüzün özet bilgisi otomatik olarak eklenir.</p>
+            <p>
+              Asistan kayıtlarınızın tamamını bilir: kuşlar, soy, çiftler, kuluçkalar, sağlık, stok, uçuş ve tartılar. Sorularınızı kuş adı veya halka numarasıyla sorabilir,
+              "kaydet" diyerek işlem de yaptırabilirsiniz; önerdiği kayıtlar onayınızla kaydedilir.
+            </p>
             <div className="chips">
               {SUGGESTIONS.map((s) => (
                 <button key={s} className="chip" onClick={() => send(s)} disabled={!cloudEnabled}>
@@ -93,6 +100,7 @@ export default function Assistant() {
           <div key={i} className={'bubble ' + m.role}>
             {m.image && <img src={m.image} alt="" />}
             {m.role === 'assistant' ? <Markdown text={m.content} /> : <p>{m.content}</p>}
+            {m.actions && <ActionCards actions={m.actions} title="Önerilen kayıtlar" />}
           </div>
         ))}
         {loading && <div className="bubble assistant typing">Yazıyor…</div>}
@@ -112,7 +120,7 @@ export default function Assistant() {
         }}
       >
         <button type="button" className="icon-btn" onClick={() => setShowPhoto((v) => !v)} aria-label="Fotoğraf ekle">
-          📷
+          <Camera size={20} />
         </button>
         <textarea
           rows={1}
@@ -127,8 +135,8 @@ export default function Assistant() {
           placeholder="Sorunuzu yazın…"
           disabled={!cloudEnabled}
         />
-        <button className="btn primary" disabled={loading || !input.trim() || !cloudEnabled}>
-          Gönder
+        <button className="btn primary" disabled={loading || !input.trim() || !cloudEnabled} aria-label="Gönder">
+          <SendHorizontal size={18} />
         </button>
       </form>
     </div>

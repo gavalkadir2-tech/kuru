@@ -103,9 +103,6 @@ export async function sendPush(sub: Sub, message: unknown, vapid: { publicKey: s
 }
 
 // ---------- Günün işleri (uygulamadaki Ana Sayfa mantığıyla aynı) ----------
-const INCUBATION_DAYS = 18
-const RING_DAY = 6
-const WEAN_DAY = 28
 const addDays = (d: string, n: number) => {
   const x = new Date(d + 'T12:00:00Z')
   x.setUTCDate(x.getUTCDate() + n)
@@ -115,6 +112,13 @@ const addDays = (d: string, n: number) => {
 // deno-lint-ignore no-explicit-any
 type Rec = Record<string, any>
 export function dueEvents(data: Record<string, Rec[]>, today: string) {
+  // Kullanıcının Ayarlar'da değiştirdiği süreler (en son güncellenen yapılandırma kaydı)
+  const cfg = (data.config || []).reduce((b: Rec | null, r) => (!b || (r.updated_at || '') > (b.updated_at || '') ? r : b), null)
+  const tm = (k: string, d: number) => (cfg?.timings && Number.isFinite(+cfg.timings[k]) && cfg.timings[k] !== '' ? +cfg.timings[k] : d)
+  const INCUBATION_DAYS = tm('incubationDays', 18)
+  const RING_DAY = tm('ringDay', 6)
+  const WEAN_DAY = tm('weanDay', 28)
+  const CANDLE_DAY = tm('candleDay', 7)
   const pigeons = data.pigeons || []
   const pairs = new Map((data.pairs || []).map((p) => [p.id, p]))
   const ring = (id: string) => pigeons.find((p) => p.id === id)?.ring || '?'
@@ -133,7 +137,7 @@ export function dueEvents(data: Record<string, Rec[]>, today: string) {
       const hatch = addDays(start, INCUBATION_DAYS)
       if (hatch === today) out.push(`🐣 Bugün çıkış bekleniyor: ${name(c.pairId)}`)
       else if (hatch === tomorrow) out.push(`🐣 Yarın çıkış bekleniyor: ${name(c.pairId)}`)
-      if (addDays(start, 7) === today) out.push(`🔦 Yumurta ışık kontrolü: ${name(c.pairId)}`)
+      if (addDays(start, CANDLE_DAY) === today) out.push(`🔦 Yumurta ışık kontrolü: ${name(c.pairId)}`)
     }
     if (c.hatchDate) {
       const ringed = pigeons.filter((p) => p.clutchId === c.id).length

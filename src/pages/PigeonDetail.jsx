@@ -1,3 +1,4 @@
+import { ScrollText, Tag } from 'lucide-react'
 import { useState } from 'react'
 import { HEALTH_TYPES, ORIGIN, SEX, STATUS } from '../lib/constants'
 import { ageText, fmtDate, money, pigeonLabel } from '../lib/format'
@@ -10,6 +11,7 @@ import { HealthForm } from './Health'
 import { useIsHelper } from '../lib/members'
 import { PigeonFlights } from './Flights'
 import Growth from './Growth'
+import { BirdAI } from '../components/AiPanels'
 
 function PedNode({ id, text, gen, maxGen, go, role }) {
   const p = id ? get('pigeons', id) : null
@@ -86,10 +88,10 @@ export default function PigeonDetail({ id, go }) {
         </button>
         <div className="row gap-s no-print">
           <button className="btn small" onClick={() => go(`belge/${p.id}`)}>
-            📜 Soy kütüğü
+            <ScrollText size={15} /> Soy kütüğü
           </button>
           <button className="btn small" onClick={() => go(`etiket/${p.id}`)}>
-            🏷️ Etiket
+            <Tag size={15} /> Etiket
           </button>
           <button className="btn small" onClick={() => setEdit(true)}>
             Düzenle
@@ -110,6 +112,8 @@ export default function PigeonDetail({ id, go }) {
             <Badge>{SEX[p.sex]}</Badge>
             {p.breed && <Badge>{p.breed}</Badge>}
             {p.color && <Badge>{p.color}</Badge>}
+            {p.group && <Badge tone="info">{p.group}</Badge>}
+            {p.eyeColor && <Badge>Göz: {p.eyeColor}</Badge>}
           </div>
         </div>
       </div>
@@ -189,7 +193,7 @@ export default function PigeonDetail({ id, go }) {
       <Tabs
         value={tab}
         onChange={setTab}
-        tabs={{ soy: 'Soy Ağacı', yavru: `Yavrular (${kids.length})`, saglik: `Sağlık (${myHealth.length})`, uretim: `Üretim (${myPairs.length})`, ucus: 'Uçuş', gelisim: 'Gelişim' }}
+        tabs={{ soy: 'Soy Ağacı', yavru: `Yavrular (${kids.length})`, saglik: `Sağlık (${myHealth.length})`, uretim: `Üretim (${myPairs.length})`, ucus: 'Uçuş', gelisim: 'Gelişim', ai: 'AI Değerlendirme' }}
       />
 
       {tab === 'soy' && (
@@ -274,6 +278,7 @@ export default function PigeonDetail({ id, go }) {
 
       {tab === 'ucus' && <PigeonFlights pigeonId={p.id} />}
       {tab === 'gelisim' && <Growth pigeonId={p.id} />}
+      {tab === 'ai' && <BirdAI pigeonId={p.id} />}
 
       {edit && <PigeonForm initial={p} onClose={() => setEdit(false)} />}
       {addHealth && <HealthForm initial={{ scope: 'some', pigeonIds: [p.id] }} onClose={() => setAddHealth(false)} />}
