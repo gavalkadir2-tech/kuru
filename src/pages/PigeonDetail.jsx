@@ -110,6 +110,8 @@ export default function PigeonDetail({ id, go }) {
             <Badge>{SEX[p.sex]}</Badge>
             {p.breed && <Badge>{p.breed}</Badge>}
             {p.color && <Badge>{p.color}</Badge>}
+            {p.group && <Badge tone="info">{p.group}</Badge>}
+            {p.eyeColor && <Badge>Göz: {p.eyeColor}</Badge>}
           </div>
         </div>
       </div>

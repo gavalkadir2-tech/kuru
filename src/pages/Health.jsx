@@ -1,12 +1,14 @@
+import { HeartPulse } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { CARE_GUIDE, HEALTH_TYPES, MEDICINES, SEX, SYMPTOMS, URGENCY } from '../lib/constants'
 import { ageText, daysBetween, exportCSV, fmtDate, money, num, pigeonLabel, today } from '../lib/format'
 import { askAI } from '../lib/ai'
+import { useList } from '../lib/config'
 import { diagnoseLocal, flockSummary } from '../lib/localAi'
 import { fmtQty, removeLinkedMove, stockLevels, syncLinkedMove } from '../lib/stock'
 import { get, list, remove, save, useCollection } from '../lib/store'
 import { cloudEnabled } from '../lib/supabase'
-import { Badge, Empty, ErrorText, Field, Markdown, Modal, PhotoInput, PigeonSelect, SearchBox, Select, Tabs, confirmDel } from '../components/ui'
+import { Badge, confirmDel, Empty, ErrorText, Field, Markdown, Modal, PageTitle, PhotoInput, PigeonSelect, SearchBox, Select, Tabs } from '../components/ui'
 
 export function PigeonMulti({ value, onChange }) {
   const pigeons = useCollection('pigeons').filter((p) => p.status === 'aktif')
@@ -50,6 +52,7 @@ export function HealthForm({ initial, onClose }) {
   })
   const [err, setErr] = useState('')
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v?.target ? v.target.value : v }))
+  const medNames = useList('medicines')
   const onMedicine = (v) => {
     const m = MEDICINES.find((x) => x.name === v)
     setF((s) => ({ ...s, medicine: v, type: m ? m.type : s.type, dose: s.dose || (m ? m.note : '') }))
@@ -92,9 +95,9 @@ export function HealthForm({ initial, onClose }) {
         <Field label="İlaç / Aşı / Uygulama" full>
           <input list="meds" value={f.medicine} onChange={(e) => onMedicine(e.target.value)} placeholder="Listeden seçin veya yazın" />
           <datalist id="meds">
-            {MEDICINES.map((m) => (
-              <option key={m.name} value={m.name}>
-                {m.note}
+            {medNames.map((name) => (
+              <option key={name} value={name}>
+                {MEDICINES.find((m) => m.name === name)?.note || ''}
               </option>
             ))}
           </datalist>
@@ -442,7 +445,7 @@ export default function Health() {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Sağlık & Bakım</h1>
+        <PageTitle icon={HeartPulse} title="Sağlık & Bakım" subtitle="İlaçlama, aşı, hastalık tahmini ve bakım" />
       </div>
       <Tabs value={tab} onChange={setTab} tabs={{ kayit: 'İlaçlama & Kayıtlar', teshis: 'Hastalık Tahmini', bakim: 'Bakım Rehberi' }} />
       {tab === 'kayit' && <Records />}

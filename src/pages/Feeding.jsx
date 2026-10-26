@@ -1,3 +1,4 @@
+import { Wheat } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { GRAINS, PERIODS } from '../lib/constants'
 import { exportCSV, fmtDate, money, num, today } from '../lib/format'
@@ -6,7 +7,7 @@ import { optimizeRation } from '../lib/localAi'
 import { STOCK_CATEGORIES, fmtQty, gramsToUnit, removeLinkedMove, stockLevels, syncLinkedMove } from '../lib/stock'
 import { get, remove, save, useCollection } from '../lib/store'
 import { cloudEnabled } from '../lib/supabase'
-import { Empty, ErrorText, Field, Markdown, Modal, Select, Tabs, confirmDel } from '../components/ui'
+import { confirmDel, Empty, ErrorText, Field, Markdown, Modal, PageTitle, Select, Tabs } from '../components/ui'
 
 const DEFAULT_GRAINS = ['misir', 'bugday', 'arpa', 'dari', 'bezelye', 'aspir']
 const grainName = (id) => GRAINS.find((g) => g.id === id)?.name || id
@@ -380,7 +381,7 @@ export default function Feeding() {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Yemleme & Rasyon</h1>
+        <PageTitle icon={Wheat} title="Yemleme & Rasyon" subtitle="Döneme göre karışım ve yemleme kaydı" />
       </div>
       <Tabs value={tab} onChange={setTab} tabs={{ rasyon: 'Rasyon Oluştur', kayit: 'Yemleme Kaydı', kayitli: 'Kayıtlı Rasyonlar' }} />
       {tab === 'rasyon' && <RationBuilder />}

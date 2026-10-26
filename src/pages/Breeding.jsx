@@ -1,10 +1,12 @@
+import { Egg } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { INCUBATION_DAYS, RING_DAY, STATUS, WEAN_DAY } from '../lib/constants'
+import { STATUS } from '../lib/constants'
+import { getTimings, useList, useTimings } from '../lib/config'
 import { addDays, daysBetween, exportCSV, fmtDate, money, pigeonLabel, today } from '../lib/format'
 import { flightStats } from '../lib/performance'
 import { coiLabel, kinship, kinshipCoef, suggestMates } from '../lib/pedigree'
 import { get, list, remove, save, useCollection } from '../lib/store'
-import { Badge, Empty, ErrorText, Field, Modal, PigeonSelect, Stat, Tabs, confirmDel } from '../components/ui'
+import { Badge, confirmDel, Empty, ErrorText, Field, Modal, PageTitle, PigeonSelect, Stat, Tabs } from '../components/ui'
 import { PigeonForm } from './Pigeons'
 import ColorGenetics from './ColorGenetics'
 
@@ -22,6 +24,7 @@ export function fosterText(c) {
 }
 
 export function clutchDates(c) {
+  const { incubationDays: INCUBATION_DAYS, ringDay: RING_DAY, weanDay: WEAN_DAY, candleDay } = getTimings()
   const start = c.egg2Date || c.egg1Date
   const expectedHatch = start ? addDays(start, INCUBATION_DAYS) : ''
   const hatch = c.hatchDate || ''
@@ -30,11 +33,12 @@ export function clutchDates(c) {
     expectedHatch,
     ringDate: base ? addDays(base, RING_DAY) : '',
     weanDate: base ? addDays(base, WEAN_DAY) : '',
-    candleDate: start ? addDays(start, 7) : '',
+    candleDate: start ? addDays(start, candleDay) : '',
   }
 }
 
 export function clutchStatus(c) {
+  const { incubationDays: INCUBATION_DAYS, weanDay: WEAN_DAY } = getTimings()
   const d = clutchDates(c)
   const t = today()
   if (c.closed) return { text: 'Tamamlandı', tone: 'neutral' }
@@ -513,7 +517,7 @@ export default function Breeding({ go }) {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Üretim</h1>
+        <PageTitle icon={Egg} title="Üretim" subtitle="Eşleştirme, yumurtlama, kuluçka ve yavrular" />
         <div className="row gap-s">
           <button className="btn ghost small" onClick={exportRows}>
             Excel

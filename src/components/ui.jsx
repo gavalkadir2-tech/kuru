@@ -140,9 +140,14 @@ export function PhotoInput({ value, onChange, label = 'Fotoğraf' }) {
   )
 }
 
-export function Stat({ label, value, sub, tone, onClick }) {
+export function Stat({ label, value, sub, tone, onClick, icon: Icon }) {
   return (
     <button className={'stat ' + (tone || '')} onClick={onClick} disabled={!onClick}>
+      {Icon && (
+        <span className="stat-icon">
+          <Icon size={16} />
+        </span>
+      )}
       <span className="stat-value">{value}</span>
       <span className="stat-label">{label}</span>
       {sub && <span className="stat-sub">{sub}</span>}
@@ -257,5 +262,42 @@ export function Gallery({ photos }) {
         </div>
       )}
     </>
+  )
+}
+
+// Sayfa başlığı: ikon, başlık, alt başlık ve sağda eylemler
+export function PageHeader({ icon: Icon, title, subtitle, children }) {
+  return (
+    <div className="page-head">
+      <div className="page-title">
+        {Icon && (
+          <span className="page-icon">
+            <Icon size={20} />
+          </span>
+        )}
+        <div>
+          <h1>{title}</h1>
+          {subtitle && <p className="page-sub">{subtitle}</p>}
+        </div>
+      </div>
+      {children && <div className="row gap-s wrap">{children}</div>}
+    </div>
+  )
+}
+
+// Mevcut .page-head içinde kullanılan başlık bloğu
+export function PageTitle({ icon: Icon, title, subtitle }) {
+  return (
+    <div className="page-title">
+      {Icon && (
+        <span className="page-icon">
+          <Icon size={20} />
+        </span>
+      )}
+      <div>
+        <h1>{title}</h1>
+        {subtitle && <p className="page-sub">{subtitle}</p>}
+      </div>
+    </div>
   )
 }

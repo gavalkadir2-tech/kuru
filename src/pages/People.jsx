@@ -1,9 +1,10 @@
+import { Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { STATUS } from '../lib/constants'
 import { exportCSV, fmtDate, money, num, today } from '../lib/format'
 import { ACCOUNT_KINDS, PERSON_TYPES, balanceOf, personBirds, phoneLinks } from '../lib/people'
 import { list, remove, save, useCollection, useRecord } from '../lib/store'
-import { Badge, Empty, ErrorText, Field, Modal, SearchBox, Select, Stat, confirmDel } from '../components/ui'
+import { Badge, confirmDel, Empty, ErrorText, Field, Modal, PageTitle, SearchBox, Select, Stat } from '../components/ui'
 
 function PersonForm({ initial, onClose, onSaved }) {
   const [f, setF] = useState({ name: '', type: 'musteri', phone: '', city: '', notes: '', ...initial })
@@ -246,7 +247,7 @@ export default function People({ go }) {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Kişiler</h1>
+        <PageTitle icon={Users} title="Kişiler" subtitle="Müşteriler, satıcılar ve cari hesaplar" />
         <div className="row gap-s">
           <button
             className="btn ghost small"

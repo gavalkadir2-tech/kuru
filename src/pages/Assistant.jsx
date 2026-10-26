@@ -1,10 +1,11 @@
+import { Sparkles } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { askAI } from '../lib/ai'
 import { today } from '../lib/format'
 import { flockSummary } from '../lib/localAi'
 import { list } from '../lib/store'
 import { cloudEnabled } from '../lib/supabase'
-import { ErrorText, Markdown, PhotoInput } from '../components/ui'
+import { ErrorText, Markdown, PageTitle, PhotoInput } from '../components/ui'
 
 const KEY = 'kuru:chat:v1'
 const SUGGESTIONS = [
@@ -64,7 +65,7 @@ export default function Assistant() {
   return (
     <div className="page chat-page">
       <div className="page-head">
-        <h1>AI Asistan</h1>
+        <PageTitle icon={Sparkles} title="AI Asistan" subtitle="Bakım, sağlık, beslenme ve üretim soruları" />
         {msgs.length > 0 && (
           <button className="btn ghost small" onClick={() => window.confirm('Sohbet geçmişi silinsin mi?') && setMsgs([])}>
             Temizle

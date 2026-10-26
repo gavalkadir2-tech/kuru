@@ -1,8 +1,9 @@
+import { ArrowLeftRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ORIGIN, STATUS } from '../lib/constants'
 import { exportCSV, fmtDate, money, today } from '../lib/format'
 import { useCollection } from '../lib/store'
-import { Badge, Empty, SearchBox, Stat, Tabs } from '../components/ui'
+import { Badge, Empty, PageTitle, SearchBox, Stat, Tabs } from '../components/ui'
 
 // Nereden geldi / kime satıldı kayıtlarının tek yerden izlenmesi
 export default function Trade({ go }) {
@@ -43,7 +44,7 @@ export default function Trade({ go }) {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Alım – Satım</h1>
+        <PageTitle icon={ArrowLeftRight} title="Alım – Satım" subtitle="Nereden geldi, kime gitti" />
         <button
           className="btn ghost small"
           onClick={() =>

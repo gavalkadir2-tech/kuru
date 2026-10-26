@@ -1,8 +1,10 @@
+import { Bird } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { BREEDS, COLORS, ORIGIN, SEX, STATUS } from '../lib/constants'
+import { ORIGIN, SEX, STATUS } from '../lib/constants'
+import { useList } from '../lib/config'
 import { ageText, exportCSV, fmtDate, money, num, pigeonLabel, today } from '../lib/format'
 import { get, list, save, useCollection, useSettings } from '../lib/store'
-import { Badge, Empty, ErrorText, Field, Modal, PhotosEditor, PigeonSelect, SearchBox, Select, persistPhotos } from '../components/ui'
+import { Badge, Empty, ErrorText, Field, Modal, PageTitle, persistPhotos, PhotosEditor, PigeonSelect, SearchBox, Select } from '../components/ui'
 import { PhotoImg } from '../lib/photos'
 import { afterPigeonSave, findPerson } from '../lib/people'
 import { useIsHelper } from '../lib/members'
@@ -20,6 +22,8 @@ export function emptyPigeon(extra = {}) {
     color: '',
     birthDate: '',
     loft: '',
+    group: '',
+    eyeColor: '',
     fatherId: '',
     motherId: '',
     fatherText: '',
@@ -91,6 +95,11 @@ export function PigeonForm({ initial, onClose, onSaved }) {
   }
   const people = useCollection('people')
   const pairs = useCollection('pairs')
+  const breeds = useList('breeds')
+  const colors = useList('colors')
+  const eyeColors = useList('eyeColors')
+  const groups = useList('groups')
+  const lofts = useList('lofts')
   const helper = useIsHelper()
 
   const transfer = ['satildi', 'verildi'].includes(f.status)
@@ -129,7 +138,7 @@ export function PigeonForm({ initial, onClose, onSaved }) {
         <Field label="Irk">
           <input list="breeds" value={f.breed} onChange={set('breed')} />
           <datalist id="breeds">
-            {BREEDS.map((b) => (
+            {breeds.map((b) => (
               <option key={b} value={b} />
             ))}
           </datalist>
@@ -137,7 +146,7 @@ export function PigeonForm({ initial, onClose, onSaved }) {
         <Field label="Renk / Desen">
           <input list="colors" value={f.color} onChange={set('color')} />
           <datalist id="colors">
-            {COLORS.map((b) => (
+            {colors.map((b) => (
               <option key={b} value={b} />
             ))}
           </datalist>
@@ -145,8 +154,24 @@ export function PigeonForm({ initial, onClose, onSaved }) {
         <Field label="Doğum tarihi">
           <input type="date" value={f.birthDate} onChange={set('birthDate')} max={today()} />
         </Field>
+        <Field label="Göz rengi">
+          <input list="eye-colors" value={f.eyeColor || ''} onChange={set('eyeColor')} />
+          <datalist id="eye-colors">
+            {eyeColors.map((b) => (
+              <option key={b} value={b} />
+            ))}
+          </datalist>
+        </Field>
+        <Field label="Grup / kategori">
+          <Select value={f.group || ''} onChange={set('group')} options={f.group && !groups.includes(f.group) ? [...groups, f.group] : groups} placeholder="— Yok —" />
+        </Field>
         <Field label="Kafes / Bölme">
-          <input value={f.loft} onChange={set('loft')} />
+          <input list="lofts" value={f.loft} onChange={set('loft')} />
+          <datalist id="lofts">
+            {lofts.map((b) => (
+              <option key={b} value={b} />
+            ))}
+          </datalist>
         </Field>
 
         <h3 className="full section-title">Soy (Anne – Baba)</h3>
@@ -372,20 +397,32 @@ export default function Pigeons({ go }) {
   const [selecting, setSelecting] = useState(false)
   const [sel, setSel] = useState([])
   const [bulk, setBulk] = useState(null)
-  const breeds = [...new Set(pigeons.map((p) => p.breed).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'))
+  const [group, setGroup] = useState('')
+  const [color, setColor] = useState('')
+  const used = (k) => [...new Set(pigeons.map((p) => p[k]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'))
+  const breeds = used('breed')
+  const groupsUsed = used('group')
+  const colorsUsed = used('color')
   const toggle = (id) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
 
   const filtered = useMemo(() => {
     const s = q.trim().toLocaleLowerCase('tr')
     return pigeons
-      .filter((p) => (!status || p.status === status) && (!sex || p.sex === sex) && (!breed || p.breed === breed))
+      .filter(
+        (p) =>
+          (!status || p.status === status) &&
+          (!sex || p.sex === sex) &&
+          (!breed || p.breed === breed) &&
+          (!group || p.group === group) &&
+          (!color || p.color === color),
+      )
       .filter(
         (p) =>
           !s ||
-          [p.ring, p.name, p.breed, p.color, p.loft, p.fromName, p.toName].some((v) => (v || '').toLocaleLowerCase('tr').includes(s)),
+          [p.ring, p.name, p.breed, p.color, p.loft, p.group, p.fromName, p.toName].some((v) => (v || '').toLocaleLowerCase('tr').includes(s)),
       )
       .sort((a, b) => (a.ring || '').localeCompare(b.ring || ''))
-  }, [pigeons, q, status, sex, breed])
+  }, [pigeons, q, status, sex, breed, group, color])
 
   const exportRows = (rows = filtered) =>
     exportCSV(
@@ -406,6 +443,8 @@ export default function Pigeons({ go }) {
         Kime: p.toName,
         'Satış Fiyatı': p.toPrice,
         Kafes: p.loft,
+        Grup: p.group,
+        'Göz Rengi': p.eyeColor,
         Notlar: p.notes,
       })),
       `kuru-guvercinler-${today()}.csv`,
@@ -414,7 +453,7 @@ export default function Pigeons({ go }) {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>Güvercinler</h1>
+        <PageTitle icon={Bird} title="Güvercinler" subtitle="Halka, soy, durum ve fotoğraflar" />
         <div className="row gap-s">
           <button className="btn ghost small" onClick={() => exportRows()}>
             Excel
@@ -438,6 +477,8 @@ export default function Pigeons({ go }) {
         <Select value={status} onChange={setStatus} options={STATUS} placeholder="Tüm durumlar" />
         <Select value={sex} onChange={setSex} options={SEX} placeholder="Tüm cinsiyetler" />
         {breeds.length > 1 && <Select value={breed} onChange={setBreed} options={breeds} placeholder="Tüm ırklar" />}
+        {groupsUsed.length > 0 && <Select value={group} onChange={setGroup} options={groupsUsed} placeholder="Tüm gruplar" />}
+        {colorsUsed.length > 1 && <Select value={color} onChange={setColor} options={colorsUsed} placeholder="Tüm renkler" />}
       </div>
       <div className="row between">
         <p className="muted small">
@@ -472,6 +513,7 @@ export default function Pigeons({ go }) {
               </div>
               <div className="pc-side">
                 <Badge tone={STATUS_TONE[p.status]}>{STATUS[p.status]}</Badge>
+                {p.group && <Badge>{p.group}</Badge>}
                 {p.status === 'satildi' && !helper && <span className="small muted">{money(p.toPrice)}</span>}
               </div>
             </button>

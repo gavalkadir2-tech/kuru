@@ -20,6 +20,7 @@ export const COLLECTIONS = [
   'accounts',
   'flights',
   'weights',
+  'config',
 ]
 
 const DATA_KEY = 'kuru:data:v1'
@@ -132,25 +133,45 @@ export function useRecord(collection, id) {
   return id ? get(collection, id) : null
 }
 
-// ---------- Ayarlar (yalnızca cihaz) ----------
+// ---------- Yapılandırma (tüm cihazlarda eşitlenir) ----------
+// `config` koleksiyonunda tek kayıt tutulur; iki cihaz aynı anda ilk kaydı oluşturursa
+// en son güncellenen geçerli sayılır ve sonraki yazımlar ona yapılır.
+export function getConfigRecord() {
+  return list('config').reduce((best, r) => (!best || (r.updated_at || '') > (best.updated_at || '') ? r : best), null)
+}
+export function getConfig() {
+  return getConfigRecord() || {}
+}
+export function saveConfig(patch) {
+  const rec = getConfigRecord()
+  return save('config', { ...(rec || {}), ...patch })
+}
+
+// ---------- Ayarlar ----------
+// Güvercinlik bilgileri eşitlenen yapılandırmada, diğerleri (tema, bildirim saati…) yalnızca bu cihazda tutulur.
+const LOFT_KEYS = ['loftName', 'owner', 'ringPrefix']
 const defaultSettings = { loftName: 'Samet Kuru Güvercinliği', owner: 'Samet Kuru', ringPrefix: 'TR' }
 let settings = { ...defaultSettings, ...readJSON(SETTINGS_KEY, {}) }
 export function getSettings() {
-  return settings
+  const loft = getConfig().loft || {}
+  return { ...settings, ...Object.fromEntries(LOFT_KEYS.filter((k) => loft[k] != null).map((k) => [k, loft[k]])) }
 }
 export function saveSettings(s) {
-  settings = { ...settings, ...s }
+  const loftPatch = Object.fromEntries(Object.entries(s).filter(([k]) => LOFT_KEYS.includes(k)))
+  const local = Object.fromEntries(Object.entries(s).filter(([k]) => !LOFT_KEYS.includes(k)))
+  settings = { ...settings, ...local }
   writeJSON(SETTINGS_KEY, settings)
-  emit()
+  if (Object.keys(loftPatch).length) saveConfig({ loft: { ...(getConfig().loft || {}), ...loftPatch } })
+  else emit()
 }
 export function useSettings() {
   useSyncExternalStore(subscribe, () => version)
-  return settings
+  return getSettings()
 }
 
 // ---------- Yedekleme ----------
 export function exportBackup() {
-  return { app: 'kuru', version: 1, exported_at: new Date().toISOString(), settings, data }
+  return { app: 'kuru', version: 1, exported_at: new Date().toISOString(), settings: getSettings(), data }
 }
 export function importBackup(json) {
   if (!json || json.app !== 'kuru' || !json.data) throw new Error('Geçersiz yedek dosyası')

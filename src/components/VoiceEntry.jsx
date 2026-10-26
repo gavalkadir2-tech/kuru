@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { apply, describe, parseSpeech, speechSupported, startListening } from '../lib/voice'
 import { cloudEnabled } from '../lib/supabase'
 import { ErrorText, Modal } from './ui'
+import { Mic } from 'lucide-react'
 
 const EXAMPLES = [
   '3 numaralı yuvada bugün ilk yumurta var',
@@ -129,8 +130,8 @@ export function VoiceFab() {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <button className="fab no-print" onClick={() => setOpen(true)} aria-label="Sesle kayıt">
-        🎤
+      <button className="fab no-print" onClick={() => setOpen(true)} aria-label="Sesle kayıt" title="Sesle kayıt">
+        <Mic size={24} />
       </button>
       {open && <VoiceModal onClose={() => setOpen(false)} />}
     </>
