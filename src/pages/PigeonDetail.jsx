@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { HEALTH_TYPES, ORIGIN, SEX, STATUS } from '../lib/constants'
 import { ageText, fmtDate, money, pigeonLabel } from '../lib/format'
-import { offspring } from '../lib/pedigree'
+import { coiLabel, inbreedingOf, offspring } from '../lib/pedigree'
 import { get, remove, useCollection, useRecord } from '../lib/store'
 import { Badge, Empty, Gallery, Tabs, confirmDel } from '../components/ui'
 import { PhotoImg, deletePhoto } from '../lib/photos'
@@ -114,6 +114,10 @@ export default function PigeonDetail({ id, go }) {
         <div>
           <span>Doğum</span>
           {fmtDate(p.birthDate)} ({ageText(p.birthDate)})
+        </div>
+        <div>
+          <span>Akrabalık katsayısı</span>
+          {coiLabel(inbreedingOf(p.id)).text}
         </div>
         <div>
           <span>Kafes</span>

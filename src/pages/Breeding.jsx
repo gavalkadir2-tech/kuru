@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { INCUBATION_DAYS, RING_DAY, WEAN_DAY } from '../lib/constants'
 import { addDays, daysBetween, exportCSV, fmtDate, pigeonLabel, today } from '../lib/format'
-import { kinship } from '../lib/pedigree'
+import { coiLabel, kinship, kinshipCoef, suggestMates } from '../lib/pedigree'
 import { get, remove, save, useCollection } from '../lib/store'
 import { Badge, Empty, ErrorText, Field, Modal, PigeonSelect, Tabs, confirmDel } from '../components/ui'
 import { PigeonForm } from './Pigeons'
@@ -48,6 +48,7 @@ function PairForm({ initial, onClose }) {
   const [err, setErr] = useState('')
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v?.target ? (v.target.type === 'checkbox' ? v.target.checked : v.target.value) : v }))
   const kin = kinship(f.maleId, f.femaleId)
+  const coi = f.maleId && f.femaleId ? coiLabel(kinshipCoef(f.maleId, f.femaleId)) : null
   const submit = (e) => {
     e.preventDefault()
     if (!f.maleId || !f.femaleId) return setErr('Erkek ve dişi seçiniz.')
@@ -78,6 +79,11 @@ function PairForm({ initial, onClose }) {
           <PigeonSelect value={f.femaleId} onChange={set('femaleId')} sex="D" includeInactive={false} />
         </Field>
         {kin && <div className={'alert full ' + (kin.type === 'direct' || kin.closest <= 1 ? 'error' : 'warn')}>⚠️ {kin.text}</div>}
+        {coi && (
+          <div className={'alert full ' + (coi.tone === 'danger' ? 'error' : coi.tone === 'ok' ? 'info' : coi.tone)}>
+            Yavrunun akrabalık katsayısı: <strong>{coi.text}</strong>
+          </div>
+        )}
         <Field label="Eşleştirme tarihi">
           <input type="date" value={f.startDate} onChange={set('startDate')} />
         </Field>
@@ -187,6 +193,67 @@ function ClutchForm({ initial, onClose }) {
   )
 }
 
+function MateSuggest({ onPair }) {
+  const pigeons = useCollection('pigeons')
+  const pairs = useCollection('pairs')
+  const [id, setId] = useState('')
+  const bird = id ? get('pigeons', id) : null
+  const rows = useMemo(() => (id ? suggestMates(id) : []), [id, pigeons])
+  const paired = new Set(pairs.filter((p) => p.active !== false).flatMap((p) => [p.maleId, p.femaleId]))
+  return (
+    <>
+      <div className="card">
+        <Field label="Eş aranacak kuş">
+          <PigeonSelect value={id} onChange={setId} includeInactive={false} placeholder="Kuş seçin" />
+        </Field>
+        <p className="small muted">
+          Adaylar yavrunun akrabalık katsayısına göre en düşükten sıralanır. Katsayı, kayıtlı soy bilgisinden hesaplanır; kayıtsız atalar akraba sayılmaz.
+        </p>
+      </div>
+      {bird && !['E', 'D'].includes(bird.sex) && <div className="alert warn">Cinsiyeti belirsiz kuş için öneri yapılamaz.</div>}
+      {bird && ['E', 'D'].includes(bird.sex) && rows.length === 0 && <Empty title="Uygun aktif eş adayı yok" />}
+      {rows.length > 0 && (
+        <div className="card table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Aday</th>
+                <th>Irk</th>
+                <th>Yavru akrabalığı</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ pigeon: p, coi, sameBreed }) => {
+                const c = coiLabel(coi)
+                return (
+                  <tr key={p.id}>
+                    <td>
+                      {pigeonLabel(p)}
+                      {paired.has(p.id) && <span className="tiny muted"> · eşli</span>}
+                    </td>
+                    <td>
+                      {p.breed || '—'} {sameBreed && '✓'}
+                    </td>
+                    <td>
+                      <Badge tone={c.tone}>{c.text.split(' — ')[0]}</Badge>
+                    </td>
+                    <td>
+                      <button className="btn tiny" onClick={() => (bird.sex === 'E' ? onPair(bird.id, p.id) : onPair(p.id, bird.id))}>
+                        Eşleştir
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  )
+}
+
 export default function Breeding({ go }) {
   const pairs = useCollection('pairs')
   const clutches = useCollection('clutches')
@@ -259,7 +326,7 @@ export default function Breeding({ go }) {
           )}
         </div>
       </div>
-      <Tabs value={tab} onChange={setTab} tabs={{ kulucka: 'Yumurtlama & Kuluçka', ciftler: `Çiftler (${pairs.length})` }} />
+      <Tabs value={tab} onChange={setTab} tabs={{ kulucka: 'Yumurtlama & Kuluçka', ciftler: `Çiftler (${pairs.length})`, oner: 'Eş Önerisi' }} />
 
       {tab === 'kulucka' && (
         <>
@@ -347,6 +414,7 @@ export default function Breeding({ go }) {
               const s = pairStats[pr.id] || { clutches: 0, eggs: 0, hatched: 0 }
               const rate = s.eggs ? Math.round((s.hatched / s.eggs) * 100) : null
               const kin = kinship(pr.maleId, pr.femaleId)
+              const coi = coiLabel(kinshipCoef(pr.maleId, pr.femaleId))
               return (
                 <div key={pr.id} className="card">
                   <div className="row between wrap gap-s">
@@ -359,6 +427,9 @@ export default function Breeding({ go }) {
                   <div className="small">
                     {fmtDate(pr.startDate)} · {s.clutches} kuluçka · {s.eggs} yumurta · {s.hatched} yavru
                     {rate != null && ` · Verim %${rate}`}
+                  </div>
+                  <div className="small">
+                    Yavru akrabalığı: <Badge tone={coi.tone}>{coi.text.split(' — ')[0]}</Badge>
                   </div>
                   {kin && <div className="small warn-text">⚠️ {kin.text}</div>}
                   <div className="row gap-s">
@@ -377,6 +448,8 @@ export default function Breeding({ go }) {
             })}
           </div>
         ))}
+
+      {tab === 'oner' && <MateSuggest onPair={(m, f) => setPairEdit({ maleId: m, femaleId: f })} />}
 
       {pairEdit && <PairForm initial={pairEdit} onClose={() => setPairEdit(null)} />}
       {clutchEdit && <ClutchForm initial={clutchEdit} onClose={() => setClutchEdit(null)} />}
