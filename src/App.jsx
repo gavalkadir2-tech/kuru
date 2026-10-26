@@ -9,6 +9,7 @@ import Certificate, { SharedPedigree } from './pages/Certificate'
 import Dashboard from './pages/Dashboard'
 import Feeding from './pages/Feeding'
 import Labels from './pages/Labels'
+import Ledger from './pages/Ledger'
 import Health from './pages/Health'
 import PigeonDetail from './pages/PigeonDetail'
 import Pigeons from './pages/Pigeons'
@@ -25,6 +26,7 @@ const NAV = [
   { id: 'asistan', icon: '🤖', label: 'AI Asistan' },
   { id: 'stok', icon: '📦', label: 'Stok' },
   { id: 'alimsatim', icon: '🤝', label: 'Alım-Satım' },
+  { id: 'defter', icon: '📒', label: 'Gelir-Gider' },
   { id: 'ayarlar', icon: '⚙️', label: 'Ayarlar' },
 ]
 // Telefonda alt çubukta görünenler
@@ -128,6 +130,9 @@ export default function App() {
       break
     case 'stok':
       content = <Stock />
+      break
+    case 'defter':
+      content = <Ledger go={go} />
       break
     case 'alimsatim':
       content = <Trade go={go} />

@@ -1544,3 +1544,9 @@ code {
     gap: 2mm;
   }
 }
+.ok-text {
+  color: var(--ok);
+}
+.table tr.muted td {
+  color: var(--muted);
+}
