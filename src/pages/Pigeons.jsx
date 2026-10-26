@@ -4,7 +4,7 @@ import { ageText, exportCSV, fmtDate, money, num, pigeonLabel, today } from '../
 import { get, list, save, useCollection, useSettings } from '../lib/store'
 import { Badge, Empty, ErrorText, Field, Modal, PhotosEditor, PigeonSelect, SearchBox, Select, persistPhotos } from '../components/ui'
 import { PhotoImg } from '../lib/photos'
-import { ensurePerson, findPerson, syncCreditSale } from '../lib/people'
+import { afterPigeonSave, findPerson } from '../lib/people'
 
 export const STATUS_TONE = { aktif: 'ok', satildi: 'info', verildi: 'info', oldu: 'danger', kayip: 'warn' }
 
@@ -75,9 +75,7 @@ export function PigeonForm({ initial, onClose, onSaved }) {
       toDate: ['satildi', 'verildi', 'oldu', 'kayip'].includes(f.status) ? f.toDate || today() : f.toDate,
     })
     // Kişi listesini ve veresiye cari kaydını güncelle
-    if (rec.origin && rec.origin !== 'uretim' && rec.fromName) ensurePerson(rec.fromName, { phone: rec.fromPhone, city: rec.fromCity, type: 'tedarikci' })
-    if (['satildi', 'verildi'].includes(rec.status) && rec.toName) ensurePerson(rec.toName, { phone: rec.toPhone, city: rec.toCity, type: 'musteri' })
-    syncCreditSale(rec)
+    afterPigeonSave(rec)
     onSaved?.(rec)
     onClose()
   }

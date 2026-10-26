@@ -77,3 +77,10 @@ export function migratePeople(getSettings, saveSettings) {
   }
   saveSettings({ peopleMigrated: true })
 }
+
+// Kuş kaydı kaydedildikten sonra: kişi listesi ve veresiye cari kaydı
+export function afterPigeonSave(rec) {
+  if (rec.origin && rec.origin !== 'uretim' && rec.fromName) ensurePerson(rec.fromName, { phone: rec.fromPhone, city: rec.fromCity, type: 'tedarikci' })
+  if (['satildi', 'verildi'].includes(rec.status) && rec.toName) ensurePerson(rec.toName, { phone: rec.toPhone, city: rec.toCity, type: 'musteri' })
+  syncCreditSale(rec)
+}

@@ -1550,3 +1550,60 @@ code {
 .table tr.muted td {
   color: var(--muted);
 }
+
+/* ---------- Sesle kayıt ---------- */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--bottom) + 16px + env(safe-area-inset-bottom));
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 24px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  z-index: 25;
+}
+@media (min-width: 900px) {
+  .fab {
+    bottom: 24px;
+    right: 24px;
+  }
+}
+.voice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+.mic {
+  align-self: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 0;
+  font-size: 34px;
+  background: var(--surface-2);
+  cursor: pointer;
+  color: var(--text);
+}
+.mic.on {
+  background: var(--danger);
+  color: #fff;
+  animation: pulse 1.2s infinite;
+}
+.voice-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.voice-action {
+  gap: 6px;
+  align-items: flex-start;
+}
+.voice-action.bad {
+  opacity: 0.75;
+}

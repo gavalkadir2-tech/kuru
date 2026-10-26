@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Auth from './Auth'
+import { VoiceFab } from './components/VoiceEntry'
 import { getSettings, list, save, saveSettings, setSyncUser, useAutoSync, useSyncState } from './lib/store'
 import { migratePeople } from './lib/people'
 import { migrateLegacyPhotos } from './lib/photos'
@@ -200,6 +201,7 @@ export default function App() {
         <SyncDot />
       </header>
       <main>{content}</main>
+      {!['asistan', 'belge', 'etiket'].includes(page) && <VoiceFab />}
       <nav className="bottom-nav no-print">{nav(NAV.filter((n) => MOBILE_NAV.includes(n.id)), 'bottom-link')}</nav>
     </div>
   )

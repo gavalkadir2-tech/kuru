@@ -1,6 +1,6 @@
 import { daysBetween, fmtDate, money, today } from '../lib/format'
-import { get, useCollection, useSettings } from '../lib/store'
-import { Badge, Stat } from '../components/ui'
+import { get, remove, useCollection, useSettings } from '../lib/store'
+import { Badge, Stat, confirmDel } from '../components/ui'
 import { fmtQty, stockLevels } from '../lib/stock'
 import { clutchDates, clutchStatus, pairLabel } from './Breeding'
 
@@ -10,6 +10,7 @@ export default function Dashboard({ go }) {
   const pairs = useCollection('pairs')
   const clutches = useCollection('clutches')
   const health = useCollection('health')
+  const notes = useCollection('notes')
   useCollection('stockMoves')
   useCollection('stock')
   const lowStock = stockLevels().filter((l) => l.low)
@@ -107,6 +108,23 @@ export default function Dashboard({ go }) {
           })}
         </div>
       </div>
+
+      {notes.length > 0 && (
+        <div className="card">
+          <h3>📝 Notlar</h3>
+          {notes.slice(0, 6).map((n) => (
+            <div key={n.id} className="row between list-row small">
+              <span>
+                <span className="muted">{fmtDate(n.date)} · </span>
+                {n.text}
+              </span>
+              <button className="btn tiny ghost danger-text" onClick={() => confirmDel('Not') && remove('notes', n.id)}>
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="quick">
         <button className="quick-btn" onClick={() => go('saglik')}>
