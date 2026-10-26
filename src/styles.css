@@ -1607,3 +1607,32 @@ code {
 .voice-action.bad {
   opacity: 0.75;
 }
+
+/* ---------- Toplu seçim ---------- */
+.pigeon-card.selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+.bulk-bar {
+  position: fixed;
+  left: 12px;
+  right: 84px;
+  bottom: calc(var(--bottom) + 12px + env(safe-area-inset-bottom));
+  z-index: 26;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--primary);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+@media (min-width: 900px) {
+  .bulk-bar {
+    left: calc(var(--sidebar) + 24px);
+    right: 100px;
+    bottom: 24px;
+  }
+}
