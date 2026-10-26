@@ -90,6 +90,7 @@ export function PigeonForm({ initial, onClose, onSaved }) {
     setF((s) => ({ ...s, [side + 'Phone']: s[side + 'Phone'] || person.phone || '', [side + 'City']: s[side + 'City'] || person.city || '' }))
   }
   const people = useCollection('people')
+  const pairs = useCollection('pairs')
   const helper = useIsHelper()
 
   const transfer = ['satildi', 'verildi'].includes(f.status)
@@ -160,6 +161,19 @@ export function PigeonForm({ initial, onClose, onSaved }) {
         </Field>
         <Field label="…veya anne halka no / bilgisi">
           <input value={f.motherText} onChange={set('motherText')} disabled={!!f.motherId} />
+        </Field>
+        <Field label="Bakıcı çift" hint="Yumurtası bakıcıya verildiyse onu büyüten çift">
+          <select value={f.fosterPairId || ''} onChange={set('fosterPairId')}>
+            <option value="">— Kendi anne-babası —</option>
+            {pairs
+              .filter((pr) => pr.active !== false || pr.id === f.fosterPairId)
+              .map((pr) => (
+                <option key={pr.id} value={pr.id}>
+                  {pairText(pr)}
+                  {pr.foster ? ' — bakıcı' : ''}
+                </option>
+              ))}
+          </select>
         </Field>
 
         <datalist id="people-list">
@@ -244,6 +258,12 @@ export function PigeonForm({ initial, onClose, onSaved }) {
       </form>
     </Modal>
   )
+}
+
+// Çift adı (Breeding'e bağımlı olmamak için burada)
+export function pairText(pr) {
+  if (!pr) return '—'
+  return `${get('pigeons', pr.maleId)?.ring || '?'} × ${get('pigeons', pr.femaleId)?.ring || '?'}${pr.nest ? ` (Yuva ${pr.nest})` : ''}`
 }
 
 export function parentLabel(p, which) {
@@ -378,6 +398,7 @@ export default function Pigeons({ go }) {
         'Doğum Tarihi': fmtDate(p.birthDate),
         Baba: parentLabel(p, 'father'),
         Anne: parentLabel(p, 'mother'),
+        Bakıcı: p.fosterPairId ? pairText(get('pairs', p.fosterPairId)) : '',
         Köken: ORIGIN[p.origin] || '',
         Kimden: p.fromName,
         'Alış Fiyatı': p.fromPrice,

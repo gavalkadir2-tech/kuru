@@ -5,7 +5,7 @@ import { coiLabel, inbreedingOf, offspring } from '../lib/pedigree'
 import { get, remove, useCollection, useRecord } from '../lib/store'
 import { Badge, Empty, Gallery, Tabs, confirmDel } from '../components/ui'
 import { PhotoImg, deletePhoto } from '../lib/photos'
-import { PigeonForm, STATUS_TONE, parentLabel } from './Pigeons'
+import { PigeonForm, STATUS_TONE, pairText, parentLabel } from './Pigeons'
 import { HealthForm } from './Health'
 import { useIsHelper } from '../lib/members'
 import { PigeonFlights } from './Flights'
@@ -119,6 +119,12 @@ export default function PigeonDetail({ id, go }) {
           <span>Doğum</span>
           {fmtDate(p.birthDate)} ({ageText(p.birthDate)})
         </div>
+        {p.fosterPairId && (
+          <div>
+            <span>Bakıcı (büyüten çift)</span>
+            {pairText(get('pairs', p.fosterPairId))}
+          </div>
+        )}
         <div>
           <span>Akrabalık katsayısı</span>
           {coiLabel(inbreedingOf(p.id)).text}

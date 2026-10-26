@@ -124,6 +124,7 @@ function buildMessages(b: Body) {
         'Kullanılabilecek eylemler:',
         '{"type":"egg","pairId":"","eggNo":1,"date":""} — yumurtlama (eggNo 1 veya 2)',
         '{"type":"hatch","pairId":"","count":2,"date":""} — yavru çıkışı',
+        '{"type":"foster","pairId":"","fosterPairId":"","eggs":2,"date":""} — bir çiftin yumurtalarının bakıcı çifte aktarılması (pairId gerçek anne-baba, fosterPairId bakıcı)',
         '{"type":"health","medicine":"","dose":"","diagnosis":"","scope":"all","pigeonIds":[],"date":"","nextDate":"","stockItemId":"","stockQty":0} — ilaç/aşı/tedavi (scope "all" tüm sürü, "some" seçili kuşlar)',
         '{"type":"feeding","feed":"","amountGram":0,"date":"","rationId":"","stockItemId":""} — yemleme',
         '{"type":"weight","pigeonId":"","gram":0,"date":""} — tartı',

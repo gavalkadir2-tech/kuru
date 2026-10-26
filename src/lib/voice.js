@@ -45,10 +45,10 @@ export function buildContext() {
       .map((p) => ({ id: p.id, ring: p.ring, name: p.name || undefined, sex: p.sex })),
     pairs: list('pairs')
       .filter((p) => p.active !== false)
-      .map((p) => ({ id: p.id, nest: p.nest || undefined, text: pairText(p) })),
+      .map((p) => ({ id: p.id, nest: p.nest || undefined, text: pairText(p), foster: p.foster || undefined })),
     openClutches: list('clutches')
       .filter((c) => !c.closed && !c.failed)
-      .map((c) => ({ pairId: c.pairId, egg1Date: c.egg1Date, egg2Date: c.egg2Date || undefined, hatchDate: c.hatchDate || undefined })),
+      .map((c) => ({ pairId: c.pairId, egg1Date: c.egg1Date, egg2Date: c.egg2Date || undefined, hatchDate: c.hatchDate || undefined, fosterPairId: c.fosterPairId || undefined })),
     stock: list('stock').map((s) => ({ id: s.id, name: s.name, unit: s.unit, category: s.category })),
     rations: list('rations').map((r) => ({ id: r.id, name: r.name })),
   }
@@ -81,6 +81,13 @@ export function describe(a) {
       return pr ? { text: `🥚 ${pairText(pr)} — ${a.eggNo === 2 ? '2.' : '1.'} yumurta, ${d}` } : { text: '🥚 Yumurtlama', error: 'Çift bulunamadı' }
     case 'hatch':
       return pr ? { text: `🐣 ${pairText(pr)} — ${a.count || 1} yavru çıktı, ${d}` } : { text: '🐣 Çıkış', error: 'Çift bulunamadı' }
+    case 'foster': {
+      const fp = a.fosterPairId && get('pairs', a.fosterPairId)
+      if (!pr || !fp) return { text: '🔄 Bakıcıya aktarma', error: 'Çift veya bakıcı bulunamadı' }
+      if (fp.id === pr.id) return { text: '🔄 Bakıcıya aktarma', error: 'Bakıcı, yumurtanın kendi çifti olamaz' }
+      if (!latestOpenClutch(a.pairId, (c) => !c.hatchDate)) return { text: `🔄 ${pairText(pr)}`, error: 'Bu çiftin açık kuluçkası yok' }
+      return { text: `🔄 ${pairText(pr)} yumurtaları (${a.eggs || 'hepsi'}) → bakıcı ${pairText(fp)}, ${d}` }
+    }
     case 'health': {
       const who = a.scope === 'some' && a.pigeonIds?.length ? a.pigeonIds.map(ring).join(', ') : 'Tüm sürü'
       return a.medicine || a.diagnosis
@@ -120,6 +127,10 @@ export function apply(a) {
       const open = a.eggNo === 2 ? latestOpenClutch(a.pairId, (c) => !c.hatchDate && !c.egg2Date) : null
       if (open) return save('clutches', { ...open, egg2Date: date })
       return save('clutches', { pairId: a.pairId, egg1Date: date, egg2Date: '', eggs: a.eggNo === 2 ? 2 : 1, fertile: '', hatchDate: '', hatched: '', notes: 'Sesle eklendi' })
+    }
+    case 'foster': {
+      const open = latestOpenClutch(a.pairId, (c) => !c.hatchDate)
+      return save('clutches', { ...open, fosterPairId: a.fosterPairId, fosterDate: date, fosterEggs: a.eggs || open.eggs || '' })
     }
     case 'hatch': {
       const open = latestOpenClutch(a.pairId, (c) => !c.hatchDate)

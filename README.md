@@ -12,7 +12,7 @@ Samet Kuru için geliştirilmiş güvercin takip programı. Telefonda uygulama g
 | **Nereden geldi / Kime satıldı** | Köken (üretim, alış, hediye, takas), kimden-telefon-şehir-fiyat; satış/hediye kime, tarih, fiyat; ölüm/kayıp kaydı. Alım-Satım sayfasında yıllık özet |
 | **Kişiler & cari** | Müşteri ve satıcı listesi (kuş kayıtlarından otomatik), telefon/WhatsApp, aldığı/sattığı kuşlar, veresiye satış ve tahsilatla bakiye |
 | **Gelir – Gider** | Kuş satış/alış, stok alımı, sağlık ve yem maliyetleri otomatik; elle gelir/gider; aylık özet, kategori dağılımı, yıllık kâr-zarar |
-| **Üretim** | Çift eşleştirme, yumurtlama kayıtları; çıkış (18 gün), ışık kontrolü, halkalama ve ayırma tarihleri otomatik; çıkan yavru tek tuşla kaydedilir. Akrabalık katsayısı (Wright), en uygun eş önerisi, çift karnesi (döllülük, çıkım, yavru uçuş puanı, satış), renk genetiği tahmini |
+| **Üretim** | Çift eşleştirme, yumurtlama kayıtları; çıkış (18 gün), ışık kontrolü, halkalama ve ayırma tarihleri otomatik; çıkan yavru tek tuşla kaydedilir. Yumurtaların bakıcı çifte aktarılması (hangi çiftin yavrusuna hangi bakıcının baktığı; hatırlatmalar bakıcının yuvasını gösterir). Akrabalık katsayısı (Wright), en uygun eş önerisi, çift karnesi (döllülük, çıkım, yavru uçuş puanı, satış), renk genetiği tahmini |
 | **Uçuş & Oyun** | Uçuş süresi, 1-10 oyun puanı, takla sayısı, hava; kuş sıralaması, baba/anne hatlarının yavru ortalamaları |
 | **Gelişim** | Tartı kayıtları ve yaşa göre ağırlık grafiği |
 | **Stok** | Yem, ilaç, vitamin, malzeme; alım/kullanım/sayım; yemleme ve ilaç kayıtlarından otomatik düşme; azalma uyarısı |

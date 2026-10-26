@@ -3,7 +3,7 @@ import { INCUBATION_DAYS, RING_DAY, STATUS, WEAN_DAY } from '../lib/constants'
 import { addDays, daysBetween, exportCSV, fmtDate, money, pigeonLabel, today } from '../lib/format'
 import { flightStats } from '../lib/performance'
 import { coiLabel, kinship, kinshipCoef, suggestMates } from '../lib/pedigree'
-import { get, remove, save, useCollection } from '../lib/store'
+import { get, list, remove, save, useCollection } from '../lib/store'
 import { Badge, Empty, ErrorText, Field, Modal, PigeonSelect, Stat, Tabs, confirmDel } from '../components/ui'
 import { PigeonForm } from './Pigeons'
 import ColorGenetics from './ColorGenetics'
@@ -13,6 +13,12 @@ export function pairLabel(pr) {
   const m = get('pigeons', pr.maleId)
   const f = get('pigeons', pr.femaleId)
   return `${m?.ring || '?'} × ${f?.ring || '?'}${pr.nest ? ` (Yuva ${pr.nest})` : ''}`
+}
+
+// Bakıcı bilgisi metni (kuluçka kartı, ana sayfa)
+export function fosterText(c) {
+  if (!c?.fosterPairId) return ''
+  return `Bakıcı: ${pairLabel(get('pairs', c.fosterPairId))}${c.fosterDate ? ` · ${fmtDate(c.fosterDate)}` : ''}`
 }
 
 export function clutchDates(c) {
@@ -95,9 +101,87 @@ function PairForm({ initial, onClose }) {
         <label className="check full">
           <input type="checkbox" checked={f.active !== false} onChange={set('active')} /> Çift aktif
         </label>
+        <label className="check full">
+          <input type="checkbox" checked={!!f.foster} onChange={set('foster')} /> Bakıcı çift (başka çiftlerin yumurtalarını kuluçkaya yatırır, yavrularını besler)
+        </label>
         <Field label="Notlar" full>
           <textarea rows={2} value={f.notes} onChange={set('notes')} />
         </Field>
+      </form>
+    </Modal>
+  )
+}
+
+// Yumurtaların bakıcı çifte aktarılması
+function FosterForm({ clutch, onClose }) {
+  const pairs = useCollection('pairs')
+  const [f, setF] = useState({
+    fosterPairId: clutch.fosterPairId || '',
+    fosterDate: clutch.fosterDate || clutch.egg2Date || clutch.egg1Date || today(),
+    fosterEggs: clutch.fosterEggs || clutch.eggs || '',
+  })
+  const [err, setErr] = useState('')
+  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }))
+  const options = pairs
+    .filter((p) => p.id !== clutch.pairId && (p.active !== false || p.id === f.fosterPairId))
+    .sort((a, b) => !!b.foster - !!a.foster)
+  const submit = (e) => {
+    e.preventDefault()
+    if (!f.fosterPairId) return setErr('Bakıcı çifti seçin.')
+    if (clutch.egg1Date && f.fosterDate < clutch.egg1Date) return setErr('Aktarma tarihi yumurtlamadan önce olamaz.')
+    if (+f.fosterEggs > (+clutch.eggs || 3)) return setErr('Aktarılan yumurta, yumurta sayısından fazla olamaz.')
+    save('clutches', { ...clutch, fosterPairId: f.fosterPairId, fosterDate: f.fosterDate, fosterEggs: f.fosterEggs })
+    // Bu kuluçkadan önceden kaydedilmiş yavrulara da bakıcıyı yaz
+    for (const p of list('pigeons').filter((p) => p.clutchId === clutch.id && !p.fosterPairId)) save('pigeons', { ...p, fosterPairId: f.fosterPairId })
+    onClose()
+  }
+  const clear = () => {
+    save('clutches', { ...clutch, fosterPairId: '', fosterDate: '', fosterEggs: '' })
+    onClose()
+  }
+  return (
+    <Modal
+      title="🔄 Bakıcıya aktar"
+      onClose={onClose}
+      footer={
+        <>
+          {clutch.fosterPairId && (
+            <button className="btn ghost danger-text" onClick={clear}>
+              Aktarmayı kaldır
+            </button>
+          )}
+          <button className="btn ghost" onClick={onClose}>
+            Vazgeç
+          </button>
+          <button className="btn primary" form="foster-form">
+            Kaydet
+          </button>
+        </>
+      }
+    >
+      <form id="foster-form" onSubmit={submit} className="form-grid">
+        <ErrorText>{err}</ErrorText>
+        <p className="small muted full">
+          Gerçek anne-baba: <strong>{pairLabel(get('pairs', clutch.pairId))}</strong>. Soy ağacında gerçek anne-baba kalır; bakıcı ayrıca kaydedilir.
+        </p>
+        <Field label="Bakıcı çift *" full>
+          <select value={f.fosterPairId} onChange={set('fosterPairId')}>
+            <option value="">Seçiniz</option>
+            {options.map((p) => (
+              <option key={p.id} value={p.id}>
+                {pairLabel(p)}
+                {p.foster ? ' — bakıcı' : ''}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Aktarma tarihi">
+          <input type="date" value={f.fosterDate} onChange={set('fosterDate')} />
+        </Field>
+        <Field label="Aktarılan yumurta">
+          <input type="number" min="1" max="3" value={f.fosterEggs} onChange={set('fosterEggs')} />
+        </Field>
+        {!options.length && <div className="alert warn full">Başka çift yok. Çiftler sekmesinden bakıcı çifti ekleyin ("Bakıcı çift" işaretiyle).</div>}
       </form>
     </Modal>
   )
@@ -198,6 +282,7 @@ function ClutchForm({ initial, onClose }) {
 // Çift karnesi: üretim verimi, yavruların uçuş başarısı ve satış geliri
 function pairReport(pr, clutches, pigeons, stats) {
   const cl = clutches.filter((c) => c.pairId === pr.id)
+  const fostered = clutches.filter((c) => c.fosterPairId === pr.id)
   const eggs = cl.reduce((t, c) => t + (+c.eggs || 0), 0)
   const fertileKnown = cl.filter((c) => c.fertile !== '' && c.fertile != null)
   const fertile = fertileKnown.reduce((t, c) => t + (+c.fertile || 0), 0)
@@ -219,6 +304,11 @@ function pairReport(pr, clutches, pigeons, stats) {
     revenue: sold.reduce((t, k) => t + (+k.toPrice || 0), 0),
     flightAvg: scored.length ? scored.reduce((t, s) => t + s.avgScore, 0) / scored.length : null,
     flown: scored.length,
+    toFoster: cl.filter((c) => c.fosterPairId).length,
+    fostered,
+    fosteredEggs: fostered.reduce((t, c) => t + (+c.fosterEggs || +c.eggs || 0), 0),
+    fosteredHatched: fostered.reduce((t, c) => t + (+c.hatched || 0), 0),
+    fosterKids: pigeons.filter((p) => p.fosterPairId === pr.id),
   }
 }
 const pct = (v) => (v == null ? '—' : `%${Math.round(v * 100)}`)
@@ -240,7 +330,27 @@ function PairReport({ pr, onClose, go }) {
         <Stat label="Yavru uçuş puanı" value={r.flightAvg != null ? r.flightAvg.toFixed(1) : '—'} sub={r.flown ? `${r.flown} yavrudan` : 'kayıt yok'} />
         <Stat label="Satış" value={r.sold} sub={money(r.revenue)} />
       </div>
+      {(r.fostered.length > 0 || pr.foster) && (
+        <>
+          <h3>Bakıcı olarak</h3>
+          <div className="stats">
+            <Stat label="Baktığı kuluçka" value={r.fostered.length} />
+            <Stat label="Aldığı yumurta" value={r.fosteredEggs} />
+            <Stat label="Çıkardığı yavru" value={r.fosteredHatched} sub={`Başarı ${pct(r.fosteredEggs ? r.fosteredHatched / r.fosteredEggs : null)}`} />
+            <Stat label="Büyüttüğü kayıtlı yavru" value={r.fosterKids.length} />
+          </div>
+          {r.fostered.map((c) => (
+            <div key={c.id} className="row between list-row small">
+              <span>
+                {fmtDate(c.fosterDate)} · {pairLabel(get('pairs', c.pairId))} çiftinin yumurtası
+              </span>
+              <span>{c.hatchDate ? `${c.hatched || 0} yavru çıktı` : c.failed ? 'bozuldu' : 'kuluçkada'}</span>
+            </div>
+          ))}
+        </>
+      )}
       <p className="small">
+        {r.toFoster > 0 && `${r.toFoster} kuluçkası bakıcıya verildi · `}
         Başlangıç: {fmtDate(pr.startDate)} · Yavru akrabalığı: <Badge tone={coi.tone}>{coi.text.split(' — ')[0]}</Badge>
       </p>
       <h3>Yavrular</h3>
@@ -254,6 +364,7 @@ function PairReport({ pr, onClose, go }) {
                 <th>Kuş</th>
                 <th>Doğum</th>
                 <th>Durum</th>
+                <th>Bakıcı</th>
                 <th>Uçuş puanı</th>
               </tr>
             </thead>
@@ -263,6 +374,7 @@ function PairReport({ pr, onClose, go }) {
                   <td>{pigeonLabel(k)}</td>
                   <td>{fmtDate(k.birthDate)}</td>
                   <td>{STATUS[k.status]}</td>
+                  <td>{k.fosterPairId ? pairLabel(get('pairs', k.fosterPairId)) : 'Kendisi'}</td>
                   <td>{stats.get(k.id)?.avgScore?.toFixed(1) ?? '—'}</td>
                 </tr>
               ))}
@@ -346,14 +458,20 @@ export default function Breeding({ go }) {
   const [showClosed, setShowClosed] = useState(false)
   const [report, setReport] = useState(null)
   const [geneticsPair, setGeneticsPair] = useState(null)
+  const [fosterOf, setFosterOf] = useState(null)
 
   const pairStats = useMemo(() => {
     const m = {}
     for (const c of clutches) {
-      m[c.pairId] ||= { clutches: 0, eggs: 0, hatched: 0 }
+      m[c.pairId] ||= { clutches: 0, eggs: 0, hatched: 0, fostered: 0, fosterHatched: 0 }
       m[c.pairId].clutches++
       m[c.pairId].eggs += +c.eggs || 0
       m[c.pairId].hatched += +c.hatched || 0
+      if (c.fosterPairId) {
+        m[c.fosterPairId] ||= { clutches: 0, eggs: 0, hatched: 0, fostered: 0, fosterHatched: 0 }
+        m[c.fosterPairId].fostered++
+        m[c.fosterPairId].fosterHatched += +c.hatched || 0
+      }
     }
     return m
   }, [clutches])
@@ -367,7 +485,7 @@ export default function Breeding({ go }) {
 
   const registerChick = (c) => {
     const pr = get('pairs', c.pairId)
-    setNewChick({ fatherId: pr?.maleId, motherId: pr?.femaleId, birthDate: c.hatchDate || today(), origin: 'uretim', clutchId: c.id })
+    setNewChick({ fatherId: pr?.maleId, motherId: pr?.femaleId, birthDate: c.hatchDate || today(), origin: 'uretim', clutchId: c.id, fosterPairId: c.fosterPairId || '' })
   }
 
   const exportRows = () =>
@@ -383,6 +501,8 @@ export default function Breeding({ go }) {
           'Tahmini Çıkış': fmtDate(d.expectedHatch),
           'Çıkış': fmtDate(c.hatchDate),
           'Çıkan Yavru': c.hatched,
+          Bakıcı: c.fosterPairId ? pairLabel(get('pairs', c.fosterPairId)) : '',
+          'Aktarma Tarihi': fmtDate(c.fosterDate),
           Durum: clutchStatus(c).text,
           Notlar: c.notes,
         }
@@ -458,11 +578,17 @@ export default function Breeding({ go }) {
                         {chicks.length ? chicks.map((k) => k.ring).join(', ') : '—'}
                       </div>
                     </div>
+                    {c.fosterPairId && <div className="alert info small">🔄 {fosterText(c)}{c.fosterEggs ? ` · ${c.fosterEggs} yumurta` : ''}</div>}
                     {c.notes && <p className="small muted">{c.notes}</p>}
                     <div className="row gap-s wrap">
                       <button className="btn small" onClick={() => setClutchEdit(c)}>
                         Düzenle
                       </button>
+                      {!c.failed && (
+                        <button className="btn small" onClick={() => setFosterOf(c)}>
+                          🔄 {c.fosterPairId ? 'Bakıcıyı değiştir' : 'Bakıcıya aktar'}
+                        </button>
+                      )}
                       {!c.hatchDate && !c.failed && (
                         <button className="btn small" onClick={() => save('clutches', { ...c, hatchDate: today(), hatched: c.hatched || c.fertile || c.eggs })}>
                           Bugün çıktı
@@ -502,7 +628,10 @@ export default function Breeding({ go }) {
                 <div key={pr.id} className="card">
                   <div className="row between wrap gap-s">
                     <strong>{pairLabel(pr)}</strong>
-                    <Badge tone={pr.active !== false ? 'ok' : 'neutral'}>{pr.active !== false ? 'Aktif' : 'Ayrıldı'}</Badge>
+                    <span className="row gap-s">
+                      {pr.foster && <Badge tone="info">Bakıcı</Badge>}
+                      <Badge tone={pr.active !== false ? 'ok' : 'neutral'}>{pr.active !== false ? 'Aktif' : 'Ayrıldı'}</Badge>
+                    </span>
                   </div>
                   <div className="small muted">
                     ♂ {pigeonLabel(get('pigeons', pr.maleId))} · ♀ {pigeonLabel(get('pigeons', pr.femaleId))}
@@ -511,6 +640,11 @@ export default function Breeding({ go }) {
                     {fmtDate(pr.startDate)} · {s.clutches} kuluçka · {s.eggs} yumurta · {s.hatched} yavru
                     {rate != null && ` · Verim %${rate}`}
                   </div>
+                  {s.fostered > 0 && (
+                    <div className="small">
+                      🔄 Bakıcı olarak: {s.fostered} kuluçka, {s.fosterHatched} yavru çıkardı
+                    </div>
+                  )}
                   <div className="small">
                     Yavru akrabalığı: <Badge tone={coi.tone}>{coi.text.split(' — ')[0]}</Badge>
                   </div>
@@ -548,6 +682,7 @@ export default function Breeding({ go }) {
 
       {tab === 'renk' && <ColorGenetics key={geneticsPair?.id || 'yok'} initialMale={geneticsPair?.maleId} initialFemale={geneticsPair?.femaleId} />}
 
+      {fosterOf && <FosterForm clutch={fosterOf} onClose={() => setFosterOf(null)} />}
       {report && <PairReport pr={report} onClose={() => setReport(null)} go={go} />}
       {pairEdit && <PairForm initial={pairEdit} onClose={() => setPairEdit(null)} />}
       {clutchEdit && <ClutchForm initial={clutchEdit} onClose={() => setClutchEdit(null)} />}

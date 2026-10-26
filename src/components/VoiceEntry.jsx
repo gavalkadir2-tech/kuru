@@ -8,6 +8,7 @@ const EXAMPLES = [
   'Dün tüm sürüye kanker kürü verdim, 5 gün sonra tekrar',
   'Yıldız 1 saat 40 dakika uçtu, puanı 8',
   'Bugün 2 kilo mısır verdim',
+  '3 numaralı yuvanın yumurtalarını 7 numaralı bakıcıya verdim',
   '1001 numaralı kuşu Ali ustaya 2000 liraya sattım',
 ]
 

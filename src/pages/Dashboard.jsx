@@ -28,7 +28,8 @@ export default function Dashboard({ go }) {
   const events = []
   for (const c of activeClutches) {
     const d = clutchDates(c)
-    const label = pairLabel(get('pairs', c.pairId))
+    // Yumurtalar bakıcıdaysa kontrol edilecek yer bakıcının yuvasıdır
+    const label = pairLabel(get('pairs', c.pairId)) + (c.fosterPairId ? ` → bakıcıda: ${pairLabel(get('pairs', c.fosterPairId))}` : '')
     if (!c.hatchDate && d.expectedHatch) events.push({ date: d.expectedHatch, icon: '🐣', text: `Çıkış bekleniyor · ${label}`, to: 'uretim' })
     if (!c.hatchDate && d.candleDate && d.candleDate >= t) events.push({ date: d.candleDate, icon: '🔦', text: `Yumurta ışık kontrolü · ${label}`, to: 'uretim' })
     if (c.hatchDate) {
