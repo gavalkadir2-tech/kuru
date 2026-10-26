@@ -84,6 +84,9 @@ export default function PigeonDetail({ id, go }) {
           <button className="btn small" onClick={() => go(`belge/${p.id}`)}>
             📜 Soy kütüğü
           </button>
+          <button className="btn small" onClick={() => go(`etiket/${p.id}`)}>
+            🏷️ Etiket
+          </button>
           <button className="btn small" onClick={() => setEdit(true)}>
             Düzenle
           </button>

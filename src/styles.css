@@ -1405,10 +1405,13 @@ code {
 }
 @media print {
   @page {
-    size: A4 landscape;
     margin: 10mm;
   }
+  @page cert {
+    size: A4 landscape;
+  }
   .certificate {
+    page: cert;
     margin: 0;
     box-shadow: none;
     outline: none;
@@ -1465,5 +1468,79 @@ code {
   }
   .cert-foot {
     padding-top: 6px;
+  }
+}
+
+/* ---------- Etiketler ---------- */
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4mm;
+}
+.label {
+  background: #fff;
+  color: #000;
+  border: 1px dashed #999;
+  border-radius: 2mm;
+  display: flex;
+  align-items: center;
+  gap: 2.5mm;
+  padding: 2mm;
+  overflow: hidden;
+  break-inside: avoid;
+  font-family: system-ui, sans-serif;
+}
+.label > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+.label span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.label.kucuk {
+  width: 50mm;
+  height: 30mm;
+  font-size: 7.5pt;
+}
+.label.kucuk img {
+  width: 24mm;
+  height: 24mm;
+}
+.label.orta {
+  width: 70mm;
+  height: 40mm;
+  font-size: 8.5pt;
+}
+.label.orta img {
+  width: 32mm;
+  height: 32mm;
+}
+.label.buyuk {
+  width: 90mm;
+  height: 55mm;
+  font-size: 10pt;
+}
+.label.buyuk img {
+  width: 45mm;
+  height: 45mm;
+}
+.label strong {
+  font-size: 1.15em;
+  letter-spacing: 0.3px;
+}
+.label-name {
+  font-weight: 600;
+}
+.label-loft {
+  font-size: 0.85em;
+  color: #555;
+}
+@media print {
+  .labels {
+    gap: 2mm;
   }
 }

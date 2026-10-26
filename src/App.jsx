@@ -8,6 +8,7 @@ import Breeding from './pages/Breeding'
 import Certificate, { SharedPedigree } from './pages/Certificate'
 import Dashboard from './pages/Dashboard'
 import Feeding from './pages/Feeding'
+import Labels from './pages/Labels'
 import Health from './pages/Health'
 import PigeonDetail from './pages/PigeonDetail'
 import Pigeons from './pages/Pigeons'
@@ -96,7 +97,7 @@ export default function App() {
     )
 
   const [page, param] = route.split('/')
-  const active = page === 'kus' || page === 'belge' ? 'kuslar' : page
+  const active = ['kus', 'belge', 'etiket'].includes(page) ? 'kuslar' : page
   let content
   switch (page) {
     case 'kuslar':
@@ -107,6 +108,9 @@ export default function App() {
       break
     case 'belge':
       content = <Certificate id={param} go={go} />
+      break
+    case 'etiket':
+      content = <Labels ids={param} go={go} />
       break
     case 'uretim':
       content = <Breeding go={go} />
